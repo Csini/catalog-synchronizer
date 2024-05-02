@@ -22,6 +22,8 @@
 		<logback.version>1.4.4</logback.version>
 		<slf4j.version>2.0.3</slf4j.version>
 
+		<univocity.version>2.9.1</univocity.version>
+
 		<spring-boot-starter-actuator.version>3.0.5</spring-boot-starter-actuator.version>
 		<micrometer-registry-prometheus.version>1.10.5</micrometer-registry-prometheus.version>
 		<testcontainers-kafka.version>1.19.3</testcontainers-kafka.version>
@@ -147,6 +149,32 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
+
+		<dependency>
+			<groupId>com.univocity</groupId>
+			<artifactId>univocity-parsers</artifactId>
+			<version>${univocity.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.hibernate.validator</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-maven-plugin -->
+		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-maven-plugin</artifactId>
+			<version>2.2.21</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.googlecode.grep4j</groupId>
+			<artifactId>grep4j</artifactId>
+			<version>1.8.7</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
@@ -169,6 +197,14 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<jvmArguments>--add-opens java.base/java.lang=ALL-UNNAMED</jvmArguments>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
 			</plugin>
 		</plugins>
 		<pluginManagement>
@@ -177,11 +213,6 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-clean-plugin</artifactId>
 					<version>${maven-clean-plugin.version}</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>${maven-compiler-plugin.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
