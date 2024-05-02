@@ -8,10 +8,24 @@ import com.univocity.parsers.annotations.EnumOptions;
 import com.univocity.parsers.annotations.Parsed;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * {@link} https://support.google.com/merchants/answer/7052112?hl=en#zippy=%2Cother-requirements%2Cformatting-your-product-data
@@ -20,8 +34,16 @@ import lombok.Data;
  *
  */
 @Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "PRODUCT")
 public class Product {
 
+	@Id
 	@Schema(name = "Your product’s unique identifier", example = "A2B4")
 	@NotNull(message = "id is required")
 	@Size(max = 50, min = 1, message = "id max 50 character")
@@ -50,23 +72,31 @@ public class Product {
 	// Column: Availability
 	@Parsed(index = 3)
 	@EnumOptions(customElement = "fromDescription")
+	@Enumerated(EnumType.STRING)
 	private Availability availability;
 
 	@Schema(name = "The condition of your product at time of sale", example = "new")
 	// Column: Condition
 	@Parsed(index = 4, defaultNullRead = "NEW")
 	@EnumOptions(customElement = "fromValue")
+	@Enumerated(EnumType.STRING)
 	private Condition condition;
 
 	@Schema(name = "Your products price", example = "15.00 USD")
 	@NotNull(message = "price is required")
 	@Parsed(index = 5)
 	@Convert(conversionClass = MonetaryAmount.class)
+	@AttributeOverrides({ @AttributeOverride(name = "amount", column = @Column(name = "priceAmount")),
+			@AttributeOverride(name = "currency", column = @Column(name = "priceCurrency")) })
+	@Embedded
 	private MonetaryAmount price;
 
 	@Schema(name = "Your product's sale price", example = "15.00 USD")
 	@Parsed(index = 6)
 	@Convert(conversionClass = MonetaryAmount.class)
+	@AttributeOverrides({ @AttributeOverride(name = "amount", column = @Column(name = "salePriceAmount")),
+			@AttributeOverride(name = "currency", column = @Column(name = "salePriceCurrency")) })
+	@Embedded
 	private MonetaryAmount sale_price;
 
 	@Schema(name = "Your product’s landing page", example = "http://www.example.com/asp/sp.asp?cat=12&id=1030")
@@ -97,6 +127,7 @@ public class Product {
 	@Schema(name = "The demographic for which your product is intended", example = "infant")
 	@Parsed(index = 10)
 	@EnumOptions(customElement = "fromValue")
+	@Enumerated(EnumType.STRING)
 	private AgeGroup age_group;
 
 	@AssertTrue(message = "age_group is required for Apparel & Accessories products")
@@ -104,9 +135,7 @@ public class Product {
 		if (StringUtils.isEmpty(google_product_category)) {
 			return true;
 		}
-		if (!"166".equals(google_product_category) 
-				&& 
-				!google_product_category.contains("Apparel & Accessories")) {
+		if (!"166".equals(google_product_category) && !google_product_category.contains("Apparel & Accessories")) {
 			return true;
 		}
 		return null == age_group;

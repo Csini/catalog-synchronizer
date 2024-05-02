@@ -63,11 +63,13 @@ public class KafkaApplication {
 			 */
 			producer.sendGreetingMessage(new Greeting("Greetings", "World!"));
 			listener.greetingLatch.await(10, TimeUnit.SECONDS);
+			
+			TSVHandler tsvHandler = context.getBean(TSVHandler.class);
 
 			//TODO
-			TSVHandler.processInputFile("/input/file1.txt");
-			TSVHandler.processInputFile("/input/file2.txt");
-			TSVHandler.processInputFile("/input/file3.txt");
+			tsvHandler.processInputFile("/input/file1.txt");
+			tsvHandler.processInputFile("/input/file2.txt");
+			tsvHandler.processInputFile("/input/file3.txt");
 		}
 //    	finally {
 //        context.close();
