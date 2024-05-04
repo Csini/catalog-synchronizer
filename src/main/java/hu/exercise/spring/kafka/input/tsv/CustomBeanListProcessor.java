@@ -25,11 +25,17 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	private ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 	private Validator validator = factory.getValidator();
 	
-	@Autowired
-	private ProductRepository repository;
+//	@Autowired
+//	private ProductRepository repository;
+	
+	private String filename;
 	
 	public CustomBeanListProcessor() {
 		super(Product.class);
+	}
+	
+	public void setFilename(String filename) {
+		this.filename = filename;
 	}
 	
 //	@Override
@@ -51,6 +57,8 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 		// TODO
 		//LOGGER.info(bean.toString());
 
+		bean.setFilename(filename);
+		
 		Set<ConstraintViolation<Product>> violations = validator.validate(bean);
 
 		if (violations.isEmpty()) {
