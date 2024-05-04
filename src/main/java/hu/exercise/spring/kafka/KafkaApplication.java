@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
@@ -27,14 +26,14 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 
-import ch.lambdaj.function.convert.ProjectConverter;
+import hu.exercise.spring.kafka.db.ProductMessageProducer;
 import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 
 @SpringBootApplication
 public class KafkaApplication {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaApplication.class);
-
+	
 	public static void main(String[] args) throws Exception {
 
 		try (ConfigurableApplicationContext context = SpringApplication.run(KafkaApplication.class, args);) {
@@ -88,6 +87,10 @@ public class KafkaApplication {
 
 				LOGGER.info(destination.getFileName() + " in " + destination.getParent() + " is ready.");
 			}
+			
+			
+			ProductMessageProducer productMessageProducer = context.getBean(ProductMessageProducer.class);
+			productMessageProducer.sendMessages();
 
 			TSVHandler tsvHandler = context.getBean(TSVHandler.class);
 
