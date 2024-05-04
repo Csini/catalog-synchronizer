@@ -80,13 +80,14 @@ public class KafkaApplication {
 
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-			InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db");
-			Path destination = Paths.get("bkp/productsdb-" + LocalDateTime.now().format(formatter) + ".bak");
+			try (InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db")) {
+				Path destination = Paths.get("bkp/productsdb-" + LocalDateTime.now().format(formatter) + ".bak");
 
-			Files.createDirectories(destination.getParent());
-			Files.copy(origin, destination);
+				Files.createDirectories(destination.getParent());
+				Files.copy(origin, destination);
 
-			LOGGER.info(destination.getFileName() + " in " + destination.getParent() + " is ready.");
+				LOGGER.info(destination.getFileName() + " in " + destination.getParent() + " is ready.");
+			}
 
 			TSVHandler tsvHandler = context.getBean(TSVHandler.class);
 
