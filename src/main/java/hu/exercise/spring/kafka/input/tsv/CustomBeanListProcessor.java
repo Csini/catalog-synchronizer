@@ -49,14 +49,14 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	public void beanProcessed(Product bean, ParsingContext context) {
 
 		// TODO
-		LOGGER.info(bean.toString());
+		//LOGGER.info(bean.toString());
 
 		Set<ConstraintViolation<Product>> violations = validator.validate(bean);
 
 		if (violations.isEmpty()) {
 
 			// TODO send to valid topic
-			repository.save(bean);
+//			repository.save(bean);
 
 		} else {
 			LOGGER.error("at " + bean.getId(), violations);
