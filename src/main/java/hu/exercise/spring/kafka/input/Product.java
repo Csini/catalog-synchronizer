@@ -1,6 +1,10 @@
 package hu.exercise.spring.kafka.input;
 
+import java.util.Date;
+
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.URL;
 
 import com.univocity.parsers.annotations.Convert;
@@ -17,6 +21,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -153,4 +159,13 @@ public class Product {
 		return GoogleProductCategoryValidator.isValid(google_product_category);
 	}
 
+	@CreationTimestamp
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date created;
+
+	@UpdateTimestamp
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date updated;
+	
+	private String filename;
 }

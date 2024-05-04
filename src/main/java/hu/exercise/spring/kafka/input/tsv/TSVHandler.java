@@ -42,6 +42,9 @@ public class TSVHandler {
 	}
 
 	public void processInputFile(String filename) throws FileNotFoundException {
+		
+		customBeanListProcessor.setFilename(filename);
+		
 		// parses everything. All rows will be pumped into the Processor.
 		parser.parse(TSVHandler.class.getResourceAsStream(filename));
 	}
