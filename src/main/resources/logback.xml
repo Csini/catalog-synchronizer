@@ -6,8 +6,12 @@
             </pattern>
         </encoder>
     </appender>
-
-    <root level="INFO">
+    
+     <logger name="org.hibernate" level="info" />
+     
+     <logger name="hu.exercise.spring.kafka" level="debug" />
+   
+    <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

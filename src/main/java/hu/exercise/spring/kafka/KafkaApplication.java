@@ -1,213 +1,86 @@
 package hu.exercise.spring.kafka;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
+import java.util.Properties;
 
+import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.streams.KafkaStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.annotation.TopicPartition;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.kafka.support.SendResult;
-import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Payload;
 
-import hu.exercise.spring.kafka.db.ProductMessageProducer;
+import hu.exercise.spring.kafka.cogroup.CogroupingStreams;
+import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 
 @SpringBootApplication
 public class KafkaApplication {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaApplication.class);
-	
+
 	public static void main(String[] args) throws Exception {
+		
+		SpringApplication.run(KafkaApplication.class, args);
 
-		try (ConfigurableApplicationContext context = SpringApplication.run(KafkaApplication.class, args);) {
+//		KafkaStreams streams = null;
+//		try (ConfigurableApplicationContext context = SpringApplication.run(KafkaApplication.class, args);) {
 
-			MessageProducer producer = context.getBean(MessageProducer.class);
-			MessageListener listener = context.getBean(MessageListener.class);
-			/*
-			 * Sending a Hello World message to topic 'baeldung'. Must be received by both
-			 * listeners with group foo and bar with containerFactory
-			 * fooKafkaListenerContainerFactory and barKafkaListenerContainerFactory
-			 * respectively. It will also be received by the listener with
-			 * headersKafkaListenerContainerFactory as container factory.
-			 */
-			producer.sendMessage("Hello, World!");
-			listener.latch.await(10, TimeUnit.SECONDS);
+//			LOGGER.info("creating DB backup...");
+//
+//			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+//
+//			try (InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db")) {
+//				Path destination = Paths.get("bkp/productsdb-" + LocalDateTime.now().format(formatter) + ".bak");
+//
+//				Files.createDirectories(destination.getParent());
+//				Files.copy(origin, destination);
+//
+//				LOGGER.info(destination.getFileName() + " in " + destination.getParent() + " is ready.");
+//			}
 
-			/*
-			 * Sending message to a topic with 5 partitions, each message to a different
-			 * partition. But as per listener configuration, only the messages from
-			 * partition 0 and 3 will be consumed.
-			 */
-			for (int i = 0; i < 5; i++) {
-				producer.sendMessageToPartition("Hello To Partitioned Topic!", i);
-			}
-			listener.partitionLatch.await(10, TimeUnit.SECONDS);
-
-			/*
-			 * Sending message to 'filtered' topic. As per listener configuration, all
-			 * messages with char sequence 'World' will be discarded.
-			 */
-			producer.sendMessageToFiltered("Hello Baeldung!");
-			producer.sendMessageToFiltered("Hello World!");
-			listener.filterLatch.await(10, TimeUnit.SECONDS);
-
-			/*
-			 * Sending message to 'greeting' topic. This will send and received a java
-			 * object with the help of greetingKafkaListenerContainerFactory.
-			 */
-			producer.sendGreetingMessage(new Greeting("Greetings", "World!"));
-			listener.greetingLatch.await(10, TimeUnit.SECONDS);
-
-			LOGGER.info("creating DB backup...");
-
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-
-			try (InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db")) {
-				Path destination = Paths.get("bkp/productsdb-" + LocalDateTime.now().format(formatter) + ".bak");
-
-				Files.createDirectories(destination.getParent());
-				Files.copy(origin, destination);
-
-				LOGGER.info(destination.getFileName() + " in " + destination.getParent() + " is ready.");
-			}
+//			CogroupingStreams cogrouping = context.getBean(CogroupingStreams.class);
+//			streams = cogrouping.getStreams(loadEnvProperties());
+//			streams.start();
 			
-			
-			ProductMessageProducer productMessageProducer = context.getBean(ProductMessageProducer.class);
-			productMessageProducer.sendMessages();
+//			DBProductMessageProducer productMessageProducer = context.getBean(DBProductMessageProducer.class);
+//			productMessageProducer.sendMessages();
 
-			TSVHandler tsvHandler = context.getBean(TSVHandler.class);
+//			TSVHandler tsvHandler = context.getBean(TSVHandler.class);
+//
+//			// TODO
+////			tsvHandler.processInputFile("/input/file1.txt");
+//			tsvHandler.processInputFile("/input/file2.txt");
+////			tsvHandler.processInputFile("/input/file3.txt");
 
-			// TODO
-			tsvHandler.processInputFile("/input/file1.txt");
-			tsvHandler.processInputFile("/input/file2.txt");
-			tsvHandler.processInputFile("/input/file3.txt");
-		}
-//    	finally {
+//		} finally {
 //        context.close();
-//        }
+//			if (streams != null) {
+////				streams.close(Duration.of(30, ChronoUnit.SECONDS));
+//				streams.close();
+//			}
+//		}
 	}
 
-	@Bean
-	public MessageProducer messageProducer() {
-		return new MessageProducer();
-	}
-
-	@Bean
-	public MessageListener messageListener() {
-		return new MessageListener();
-	}
-
-	public static class MessageProducer {
-
-		@Autowired
-		private KafkaTemplate<String, String> kafkaTemplate;
-
-		@Autowired
-		private KafkaTemplate<String, Greeting> greetingKafkaTemplate;
-
-		@Value(value = "${message.topic.name}")
-		private String topicName;
-
-		@Value(value = "${partitioned.topic.name}")
-		private String partitionedTopicName;
-
-		@Value(value = "${filtered.topic.name}")
-		private String filteredTopicName;
-
-		@Value(value = "${greeting.topic.name}")
-		private String greetingTopicName;
-
-		public void sendMessage(String message) {
-
-			CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, message);
-			future.whenComplete((result, ex) -> {
-
-				if (ex == null) {
-					System.out.println(
-							"Sent message=[" + message + "] with offset=[" + result.getRecordMetadata().offset() + "]");
-				} else {
-					System.out.println("Unable to send message=[" + message + "] due to : " + ex.getMessage());
-				}
-			});
-		}
-
-		public void sendMessageToPartition(String message, int partition) {
-			kafkaTemplate.send(partitionedTopicName, partition, null, message);
-		}
-
-		public void sendMessageToFiltered(String message) {
-			kafkaTemplate.send(filteredTopicName, message);
-		}
-
-		public void sendGreetingMessage(Greeting greeting) {
-			greetingKafkaTemplate.send(greetingTopicName, greeting);
-		}
-	}
-
-	public static class MessageListener {
-
-		private CountDownLatch latch = new CountDownLatch(3);
-
-		private CountDownLatch partitionLatch = new CountDownLatch(2);
-
-		private CountDownLatch filterLatch = new CountDownLatch(2);
-
-		private CountDownLatch greetingLatch = new CountDownLatch(1);
-
-		@KafkaListener(topics = "${message.topic.name}", groupId = "foo", containerFactory = "fooKafkaListenerContainerFactory")
-		public void listenGroupFoo(String message) {
-			System.out.println("Received Message in group 'foo': " + message);
-			latch.countDown();
-		}
-
-		@KafkaListener(topics = "${message.topic.name}", groupId = "bar", containerFactory = "barKafkaListenerContainerFactory")
-		public void listenGroupBar(String message) {
-			System.out.println("Received Message in group 'bar': " + message);
-			latch.countDown();
-		}
-
-		@KafkaListener(topics = "${message.topic.name}", containerFactory = "headersKafkaListenerContainerFactory")
-		public void listenWithHeaders(@Payload String message, @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
-			System.out.println("Received Message: " + message + " from partition: " + partition);
-			latch.countDown();
-		}
-
-		@KafkaListener(topicPartitions = @TopicPartition(topic = "${partitioned.topic.name}", partitions = { "0",
-				"3" }), containerFactory = "partitionsKafkaListenerContainerFactory")
-		public void listenToPartition(@Payload String message, @Header(KafkaHeaders.RECEIVED_PARTITION) int partition) {
-			System.out.println("Received Message: " + message + " from partition: " + partition);
-			this.partitionLatch.countDown();
-		}
-
-		@KafkaListener(topics = "${filtered.topic.name}", containerFactory = "filterKafkaListenerContainerFactory")
-		public void listenWithFilter(String message) {
-			System.out.println("Received Message in filtered listener: " + message);
-			this.filterLatch.countDown();
-		}
-
-		@KafkaListener(topics = "${greeting.topic.name}", containerFactory = "greetingKafkaListenerContainerFactory")
-		public void greetingListener(Greeting greeting) {
-			System.out.println("Received greeting message: " + greeting);
-			this.greetingLatch.countDown();
-		}
-
-	}
+//	public static Properties loadEnvProperties() throws IOException {
+//		final Properties allProps = new Properties();
+//		try (InputStream input = KafkaApplication.class.getResourceAsStream("/application.properties")) {
+//			allProps.load(input);
+//		}
+//		
+//		allProps.setProperty("application.id", "product-input");
+//		allProps.setProperty("bootstrap.servers", allProps.getProperty("spring.kafka.bootstrap-servers"));
+//
+//		return allProps;
+//	}
 
 }
