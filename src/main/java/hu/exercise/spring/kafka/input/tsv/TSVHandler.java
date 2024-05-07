@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.univocity.parsers.tsv.TsvParser;
 import com.univocity.parsers.tsv.TsvParserSettings;
 
+import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.init.CreateTopicsSpringApplication;
 import jakarta.annotation.PostConstruct;
 
@@ -25,6 +26,9 @@ public class TSVHandler {
 	
 	@Autowired
 	private CustomProcessorErrorHandler customProcessorErrorHandler;
+	
+	@Autowired
+	public KafkaEnvironment environment;
 
 	@PostConstruct
 	private void postConstruct() {
@@ -41,11 +45,9 @@ public class TSVHandler {
 		parser = new TsvParser(settings);
 	}
 
-	public void processInputFile(String filename) throws FileNotFoundException {
-		
-		customBeanListProcessor.setFilename(filename);
+	public void processInputFile() throws FileNotFoundException {
 		
 		// parses everything. All rows will be pumped into the Processor.
-		parser.parse(TSVHandler.class.getResourceAsStream(filename));
+		parser.parse(TSVHandler.class.getResourceAsStream(environment.getFilenane()));
 	}
 }

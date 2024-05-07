@@ -1,4 +1,4 @@
-package hu.exercise.spring.kafka;
+package hu.exercise.spring.kafka.config;
 
 import java.util.HashMap;
 import java.util.Map;

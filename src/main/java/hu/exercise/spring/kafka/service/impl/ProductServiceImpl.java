@@ -25,7 +25,7 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public List<Product> getAllProducts() {
+	public Iterable<Product> getAllProducts() {
 		return repository.findAll();
 	}
 
@@ -41,8 +41,18 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public Product saveProduct(Product Product) {
-		return repository.saveAndFlush(Product);
+	public Product saveProduct(Product product) {
+		return repository.save(product);
+	}
+	
+	@Override
+	public Iterable<Product> bulkSaveProducts(Iterable<Product> productList) {
+		return repository.saveAll(productList);
+	}
+	
+	@Override
+	public void bulkDeleteProducts(Iterable<Product> productList) {
+		repository.deleteAll(productList);
 	}
 
 	@Override

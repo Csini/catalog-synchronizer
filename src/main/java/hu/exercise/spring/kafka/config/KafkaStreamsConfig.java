@@ -1,8 +1,9 @@
-package hu.exercise.spring.kafka;
+package hu.exercise.spring.kafka.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Aggregator;
 import org.apache.kafka.streams.kstream.Consumed;
@@ -20,10 +21,12 @@ import org.springframework.kafka.support.KafkaStreamBrancher;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
+import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Action;
 import hu.exercise.spring.kafka.cogroup.ProductAggregator;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.event.ProductEvent;
+import hu.exercise.spring.kafka.input.Product;
 
 @EnableKafka
 @EnableKafkaStreams
@@ -45,6 +48,9 @@ public class KafkaStreamsConfig {
 	@Autowired
 	public NewTopic validProduct;
 
+	@Autowired
+	public KafkaEnvironment environment;
+
 	@Bean
 	public Serde<ProductRollup> productRollupSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProductRollup.class));
@@ -53,6 +59,11 @@ public class KafkaStreamsConfig {
 	@Bean
 	public Serde<ProductEvent> productEventSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProductEvent.class));
+	}
+
+	@Bean
+	public Serde<Product> productSerde() {
+		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(Product.class));
 	}
 
 //	@Value(value = "${spring.kafka.streams.state.dir}")
@@ -80,29 +91,41 @@ public class KafkaStreamsConfig {
 
 		final Serde<String> stringSerde = Serdes.String();
 
+		Serde<ProductEvent> productEventSerde = productEventSerde();
 		final KStream<String, ProductEvent> readedStream = builder.stream(readedFromDbTopic,
-				Consumed.with(stringSerde, productEventSerde()));
+				Consumed.with(stringSerde, productEventSerde));
 		final KStream<String, ProductEvent> validStream = builder.stream(validProductTopic,
-				Consumed.with(stringSerde, productEventSerde()));
+				Consumed.with(stringSerde, productEventSerde));
 
-		final Aggregator<String, ProductEvent, ProductRollup> productAggregator = new ProductAggregator();
+		final Aggregator<String, ProductEvent, ProductRollup> productAggregator = new ProductAggregator(
+				environment.getRequestid());
 
 		final KGroupedStream<String, ProductEvent> readedGrouped = readedStream.groupByKey();
 		final KGroupedStream<String, ProductEvent> validGrouped = validStream.groupByKey();
 
+		Serde<ProductRollup> productRollupSerde = productRollupSerde();
 		KStream<String, ProductRollup> stream = readedGrouped.cogroup(productAggregator)
-				.cogroup(validGrouped, productAggregator)
-				.aggregate(() -> new ProductRollup(), Materialized.with(Serdes.String(), productRollupSerde()))
+				.cogroup(validGrouped, productAggregator).aggregate(() -> new ProductRollup(environment.getRequestid()),
+						Materialized.with(Serdes.String(), productRollupSerde))
 				.toStream();
-		
-		stream.to(totalResultOutputTopic, Produced.with(stringSerde, productRollupSerde()));
 
+		stream.to(totalResultOutputTopic, Produced.with(stringSerde, productRollupSerde));
+
+		Serde<Product> productSerde = productSerde();
 		new KafkaStreamBrancher<String, ProductRollup>()
-				.branch((key, value) -> Action.INSERT.equals(value.getPair().getAction()), (ks) -> ks.to("product-" + Action.INSERT))
-				.branch((key, value) -> Action.UPDATE.equals(value.getPair().getAction()), (ks) -> ks.to("product-" + Action.UPDATE))
-				.branch((key, value) -> Action.DELETE.equals(value.getPair().getAction()), (ks) -> ks.to("product-" + Action.DELETE))
-				.defaultBranch(ks -> ks.to("product-UNKNOWN"))
-				.onTopOf(stream);
+				.branch((key, value) -> Action.INSERT.equals(value.getPair().getAction()),
+						(ks) -> ks.map(
+								(key, value) -> new KeyValue<String, Product>(key, value.getPair().getReadedFromFile()))
+								.to("product-" + Action.INSERT, Produced.with(stringSerde, productSerde)))
+				.branch((key, value) -> Action.UPDATE.equals(value.getPair().getAction()),
+						(ks) -> ks.map(
+								(key, value) -> new KeyValue<String, Product>(key, value.getPair().getReadedFromFile()))
+								.to("product-" + Action.UPDATE, Produced.with(stringSerde, productSerde)))
+				.branch((key, value) -> Action.DELETE.equals(value.getPair().getAction()),
+						(ks) -> ks.map(
+								(key, value) -> new KeyValue<String, Product>(key, value.getPair().getReadedFromDb()))
+								.to("product-" + Action.DELETE, Produced.with(stringSerde, productSerde)))
+				.defaultBranch(ks -> ks.to("product-UNKNOWN")).onTopOf(stream);
 
 		return stream;
 	}

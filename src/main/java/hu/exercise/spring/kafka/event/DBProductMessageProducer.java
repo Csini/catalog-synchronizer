@@ -26,7 +26,7 @@ public class DBProductMessageProducer {
 
 	@Autowired
 	public NewTopic readedFromDb;
-	
+
 	@Autowired
 	private KafkaTemplate<String, ProductEvent> readedFromDbKafkaTemplate;
 
@@ -34,13 +34,13 @@ public class DBProductMessageProducer {
 	private ProductService productService;
 
 	public void sendMessages() throws IOException {
-		
+
 		backupDB();
-		
+
 		productService.getAllProducts().forEach(p -> {
 
 			// LOGGER.info("sending product to readedFromDb: " + p);
-			readedFromDbKafkaTemplate.send(readedFromDb.name(), p.getId(),new ProductEvent(Source.DB, p));
+			readedFromDbKafkaTemplate.send(readedFromDb.name(), p.getId(), new ProductEvent(Source.DB, p));
 		});
 	}
 

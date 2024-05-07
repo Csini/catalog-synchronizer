@@ -9,9 +9,9 @@
     
      <logger name="org.hibernate" level="info" />
      
-     <logger name="hu.exercise.spring.kafka" level="debug" />
+     <logger name="hu.exercise.spring.kafka" level="warn" />
    
-    <root level="info">
+    <root level="warn">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

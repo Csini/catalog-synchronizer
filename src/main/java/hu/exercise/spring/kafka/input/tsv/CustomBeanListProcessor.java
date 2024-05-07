@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.univocity.parsers.common.ParsingContext;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 
+import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.event.ProductErrorEvent;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.event.Source;
@@ -33,7 +34,7 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 	@Autowired
 	public NewTopic validProduct;
-	
+
 	@Autowired
 	public NewTopic invalidProduct;
 
@@ -46,14 +47,11 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	@Autowired
 	private KafkaTemplate<String, ProductErrorEvent> invalidFromTSVKafkaTemplate;
 
-	private String filename;
+	@Autowired
+	public KafkaEnvironment environment;
 
 	public CustomBeanListProcessor() {
 		super(Product.class);
-	}
-
-	public void setFilename(String filename) {
-		this.filename = filename;
 	}
 
 //	@Override
@@ -73,25 +71,27 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	public void beanProcessed(Product bean, ParsingContext context) {
 
 		// TODO
-		//LOGGER.info(bean.toString());
+		// LOGGER.info(bean.toString());
 
-		bean.setFilename(filename);
-		
+		bean.setRun(environment.getRun());
+
 		Set<ConstraintViolation<Product>> violations = validator.validate(bean);
 
 		if (violations.isEmpty()) {
 
 //			repository.save(bean);
-			
-			//  send to valid topic
-			validFromTSVKafkaTemplate.send(validProduct.name(), bean.getId(),new ProductEvent(Source.TSV, bean));
+
+			// send to valid topic
+			validFromTSVKafkaTemplate.send(validProduct.name(), bean.getId(), new ProductEvent(Source.TSV, bean));
 
 		} else {
 			LOGGER.error("at " + bean.getId(), violations);
-			//  send to invalid topic
-			//TODO
+			// send to invalid topic
+			// TODO
 			String violationtext = violations.stream().map(v -> v.toString()).collect(Collectors.joining(","));
-			invalidFromTSVKafkaTemplate.send(invalidProduct.name(), new ProductErrorEvent(bean.getId(), bean, new IllegalArgumentException(violationtext)));
+			invalidFromTSVKafkaTemplate.send(invalidProduct.name(), "" + environment.getRequestid(),
+					new ProductErrorEvent(environment.getRequestid(), bean.getId(), bean,
+							new IllegalArgumentException(violationtext)));
 
 //			for (ConstraintViolation<Product> violation : violations) {
 //				LOGGER.error(violation.getMessage());

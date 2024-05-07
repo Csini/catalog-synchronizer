@@ -1,27 +1,9 @@
 package hu.exercise.spring.kafka;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.Properties;
-
-import org.apache.kafka.clients.admin.KafkaAdminClient;
-import org.apache.kafka.streams.KafkaStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-
-import hu.exercise.spring.kafka.cogroup.CogroupingStreams;
-import hu.exercise.spring.kafka.event.DBProductMessageProducer;
-import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 
 @SpringBootApplication
 public class KafkaApplication {

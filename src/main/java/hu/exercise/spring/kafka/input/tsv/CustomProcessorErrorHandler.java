@@ -11,6 +11,7 @@ import com.univocity.parsers.common.Context;
 import com.univocity.parsers.common.DataProcessingException;
 import com.univocity.parsers.common.ProcessorErrorHandler;
 
+import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.event.ProductErrorEvent;
 
 @Service
@@ -20,9 +21,12 @@ public class CustomProcessorErrorHandler implements ProcessorErrorHandler<Contex
 
 	@Autowired
 	public NewTopic invalidProduct;
-	
+
 	@Autowired
 	private KafkaTemplate<String, ProductErrorEvent> invalidFromTSVKafkaTemplate;
+
+	@Autowired
+	public KafkaEnvironment environment;
 
 	@Override
 	public void handleError(DataProcessingException error, Object[] inputRow, Context context) {
@@ -30,8 +34,9 @@ public class CustomProcessorErrorHandler implements ProcessorErrorHandler<Contex
 				+ " : " + error.getMessage());
 		// send to invalid topic
 		// TODO
-		invalidFromTSVKafkaTemplate.send(invalidProduct.name(), new ProductErrorEvent(
-				(inputRow == null || inputRow.length < 1) ? null : "" + inputRow[0], null, error));
+		invalidFromTSVKafkaTemplate.send(invalidProduct.name(), "" + environment.getRequestid(),
+				new ProductErrorEvent(environment.getRequestid(),
+						(inputRow == null || inputRow.length < 1) ? null : "" + inputRow[0], null, error));
 
 	}
 

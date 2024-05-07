@@ -53,6 +53,7 @@ public class DbConfig {
 		if (env.getProperty("hibernate.show_sql") != null) {
 			hibernateProperties.setProperty("hibernate.show_sql", env.getProperty("hibernate.show_sql"));
 		}
+		
 		return hibernateProperties;
 	}
 

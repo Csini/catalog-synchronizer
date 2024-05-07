@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductEvent {
-
+	
 	private Source source;
 	
 	private Product product;

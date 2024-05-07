@@ -1,17 +1,23 @@
 package hu.exercise.spring.kafka.cogroup;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.UUID;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class ProductRollup {
 	
+	private UUID requestid;
+
 	private String id;
 	
-//	private Map<String, ProductPair> products = new HashMap<>();
-	
 	private ProductPair pair = new ProductPair();
+
+	public ProductRollup(UUID requestid) {
+		super();
+		this.requestid = requestid;
+	}
 
 }

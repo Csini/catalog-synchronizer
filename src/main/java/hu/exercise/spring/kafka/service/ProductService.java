@@ -7,13 +7,17 @@ import jakarta.persistence.EntityNotFoundException;
 
 public interface ProductService {
 
-	public List<Product> getAllProducts();
+	public Iterable<Product> getAllProducts();
 
 	public Product getProduct(String id) throws EntityNotFoundException;
 
 	public String deleteProduct(String id) throws EntityNotFoundException;
 
-	public Product saveProduct(Product Product);
+	public Product saveProduct(Product product);
+	
+	public Iterable<Product> bulkSaveProducts(Iterable<Product> productList);
+
+	public void bulkDeleteProducts(Iterable<Product> productList);
 
 	public long getCountAllProducts();
 
