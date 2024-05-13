@@ -1,21 +1,21 @@
 package hu.exercise.spring.kafka.cogroup;
 
-import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.event.ProductEvent;
 import lombok.Data;
 
 @Data
 public class ProductPair {
 
 	public Action getAction() {
-		if (readedFromDb == null) {
+		if (readedFromDb==null || readedFromDb.getSource() == null) {
 			return Action.INSERT;
-		} else if (readedFromFile == null) {
+		} else if (readedFromFile==null || readedFromFile.getSource() == null) {
 			return Action.DELETE;
 		}
 		return Action.UPDATE;
 	}
 
-	private Product readedFromFile;
+	private ProductEvent readedFromFile;
 	
-	private Product readedFromDb;
+	private ProductEvent readedFromDb;
 }

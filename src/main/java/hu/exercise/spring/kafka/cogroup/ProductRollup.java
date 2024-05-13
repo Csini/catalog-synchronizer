@@ -1,23 +1,21 @@
 package hu.exercise.spring.kafka.cogroup;
 
-import java.util.UUID;
-
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(of = {"productrollupid"})
 public class ProductRollup {
 	
-	private UUID requestid;
+	private String productrollupid;
 
-	private String id;
-	
 	private ProductPair pair = new ProductPair();
 
-	public ProductRollup(UUID requestid) {
+	public ProductRollup(String productrollupid) {
 		super();
-		this.requestid = requestid;
+		this.productrollupid = productrollupid;
 	}
 
 }

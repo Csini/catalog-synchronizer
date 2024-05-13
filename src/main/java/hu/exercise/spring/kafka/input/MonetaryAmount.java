@@ -6,8 +6,10 @@ import java.util.Currency;
 import com.univocity.parsers.conversions.Conversion;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode
 public class MonetaryAmount implements Conversion<String, MonetaryAmount> {
 
 	private BigDecimal amount;

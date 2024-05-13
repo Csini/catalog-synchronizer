@@ -1,11 +1,14 @@
 package hu.exercise.spring.kafka.service.impl;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.repository.CustomProductRepository;
 import hu.exercise.spring.kafka.repository.ProductRepository;
 import hu.exercise.spring.kafka.service.ProductService;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,19 +17,26 @@ import jakarta.persistence.EntityNotFoundException;
 public class ProductServiceImpl implements ProductService {
 
 	private ProductRepository repository;
+	
+	private CustomProductRepository customRepository;
 
-	public ProductServiceImpl(@Autowired ProductRepository repository) {
+	public ProductServiceImpl(@Autowired ProductRepository repository, @Autowired CustomProductRepository customRepository) {
 		super();
 		this.repository = repository;
+		this.customRepository = customRepository;
 	}
 
 	public void setRepository(ProductRepository repository) {
 		this.repository = repository;
 	}
+	
+	public void setCustomRepository(CustomProductRepository customRepository) {
+		this.customRepository = customRepository;
+	}
 
 	@Override
-	public Iterable<Product> getAllProducts() {
-		return repository.findAll();
+	public Stream<Product> getAllProducts(String requestid) {
+		return customRepository.findAllProductsNative(requestid);
 	}
 
 	@Override
@@ -51,7 +61,18 @@ public class ProductServiceImpl implements ProductService {
 	}
 	
 	@Override
+	public void bulkInsertProducts(Iterable<Product> productList) {
+		customRepository.insertAll(productList);
+	}
+	
+	@Override
+	public void bulkUpdateProducts(Iterable<Product> productList) {
+		customRepository.updateAll(productList);
+	}
+	
+	@Override
 	public void bulkDeleteProducts(Iterable<Product> productList) {
+//		customRepository.deleteAll(productList);
 		repository.deleteAll(productList);
 	}
 

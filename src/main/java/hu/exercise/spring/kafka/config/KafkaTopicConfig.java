@@ -5,10 +5,14 @@ import java.util.Map;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaAdmin;
+
+import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.cogroup.Action;
 
 @Configuration
 public class KafkaTopicConfig {
@@ -27,6 +31,12 @@ public class KafkaTopicConfig {
 
 	@Value(value = "${productRollup.topic.name}")
 	private String productRollup;
+	
+	@Value(value = "${product.topic.name}")
+	private String productTopic;
+	
+	@Autowired
+	public KafkaEnvironment environment;
 
 	@Bean
 	public KafkaAdmin kafkaAdmin() {
@@ -55,6 +65,31 @@ public class KafkaTopicConfig {
 	@Bean
 	public NewTopic productRollup() {
 		return new NewTopic(productRollup, 1, (short) 1);
+	}
+	
+	@Bean
+	public NewTopic productTopic() {
+		return new NewTopic(environment.getRequestid() + "-" + productTopic, 1, (short) 1);
+	}
+	
+	@Bean
+	public NewTopic runs() {
+		return new NewTopic("runs", 1, (short) 1);
+	}
+	
+	@Bean
+	public NewTopic productUpdate() {
+		return new NewTopic(environment.getRequestid() + "-" + "product-" + Action.UPDATE, 1, (short) 1);
+	}
+	
+	@Bean
+	public NewTopic productInsert() {
+		return new NewTopic(environment.getRequestid() + "-" + "product-" + Action.INSERT, 1, (short) 1);
+	}
+	
+	@Bean
+	public NewTopic productDelete() {
+		return new NewTopic(environment.getRequestid() + "-" + "product-" + Action.DELETE, 1, (short) 1);
 	}
 
 }

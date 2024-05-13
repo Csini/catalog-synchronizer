@@ -1,17 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+<!--     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender"> -->
+<!--         <encoder> -->
+<!--             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n -->
+<!--             </pattern> -->
+<!--         </encoder> -->
+<!--     </appender> -->
+    
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
-            </pattern>
-        </encoder>
-    </appender>
+    <encoder>
+      <pattern>%d{yyyy-MM-dd} | %d{HH:mm:ss.SSS} | %20thread | %5p | %25logger{25} | %12(ID: %8mdc{id}) | %m%n</pattern>
+      <charset>utf8</charset>
+    </encoder>
+  </appender>
     
      <logger name="org.hibernate" level="info" />
      
+     <logger name="org" level="warn" />
+     
+     <logger name="org.apache.kafka" level="warn" />
+     
      <logger name="hu.exercise.spring.kafka" level="warn" />
+     <logger name="hu.exercise.spring.kafka.cogroup" level="info" />
+     
+     
+     <logger name="net.ttddyy.dsproxy.listener" level="warn" />
+     
+     <logger name="org.apache.kafka.streams.KafkaStreams" level="debug" />
    
-    <root level="warn">
+    <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

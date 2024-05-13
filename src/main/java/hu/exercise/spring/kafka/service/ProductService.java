@@ -1,13 +1,13 @@
 package hu.exercise.spring.kafka.service;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import hu.exercise.spring.kafka.input.Product;
 import jakarta.persistence.EntityNotFoundException;
 
 public interface ProductService {
 
-	public Iterable<Product> getAllProducts();
+	public Stream<Product> getAllProducts(String requestid);
 
 	public Product getProduct(String id) throws EntityNotFoundException;
 
@@ -20,5 +20,9 @@ public interface ProductService {
 	public void bulkDeleteProducts(Iterable<Product> productList);
 
 	public long getCountAllProducts();
+
+	public void bulkUpdateProducts(Iterable<Product> productList);
+
+	public void bulkInsertProducts(Iterable<Product> productList);
 
 }

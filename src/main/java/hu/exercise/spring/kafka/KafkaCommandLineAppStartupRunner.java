@@ -1,16 +1,19 @@
 package hu.exercise.spring.kafka;
 
-import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.kafka.streams.KafkaStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.stereotype.Component;
 
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
-import hu.exercise.spring.kafka.event.ProductEvent;
+import hu.exercise.spring.kafka.event.RunMessageProducer;
 import hu.exercise.spring.kafka.input.Run;
 import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 import hu.exercise.spring.kafka.service.RunService;
@@ -28,36 +31,62 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 	@Autowired
 	ShutdownController shutdownController;
-	
+
 	@Autowired
 	public KafkaEnvironment environment;
-	
+
 	@Autowired
 	public RunService runService;
-	
+
 	@Autowired
-	private KafkaTemplate<String, Run> runKafkaTemplate;
+	private RunMessageProducer runMessageProducer;
+
+	@Autowired
+	StreamsBuilderFactoryBean factory;
 
 	@Override
 	public void run(String... args) throws Exception {
 		LOGGER.info("args: " + args);
 
-		//save metadata
+		KafkaStreams kafkaStreams = factory.getKafkaStreams();
+//		kafkaStreams.pause();
+//		kafkaStreams.cleanUp();
+//		kafkaStreams.start();
+
+		// save metadata
 
 		Run run = environment.getRun();
-		//TODO args[0]
+		// TODO args[0]
 		run.setFilenane("/input/file1.txt");
 
 		runService.saveRun(run);
-		runKafkaTemplate.send("runs", run);
+		runMessageProducer.sendRunMessage(run);
+
+		LOGGER.warn(run.toString());
 		
-		dbProductMessageProducer.sendMessages();
+		ExecutorService service = Executors.newFixedThreadPool(2);
+		service.submit(() -> {
+			try {
+				dbProductMessageProducer.sendMessages();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
+		service.submit(() -> {
+			try {
+				tsvHandler.processInputFile();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
+
+		service.shutdown();
+		service.awaitTermination(1, TimeUnit.MINUTES);
 
 		// TODO
-		tsvHandler.processInputFile();
+
 //		tsvHandler.processInputFile("/input/file2.txt");
 //		tsvHandler.processInputFile("/input/file3.txt");
-
 
 //		shutdownController.shutdownContext();
 	}
