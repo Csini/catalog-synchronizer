@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SelectBeforeUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.URL;
 
@@ -19,7 +20,10 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -29,9 +33,11 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * {@link} https://support.google.com/merchants/answer/7052112?hl=en#zippy=%2Cother-requirements%2Cformatting-your-product-data
@@ -47,6 +53,8 @@ import lombok.Setter;
 @Builder
 @Entity
 @Table(name = "PRODUCT")
+@EqualsAndHashCode(of = "id")
+@SelectBeforeUpdate(false)
 public class Product {
 
 	@Id
@@ -61,14 +69,14 @@ public class Product {
 
 	@Schema(name = "Your product’s name", example = "Mens Pique Polo Shirt")
 	@NotNull(message = "title is required")
-	@Size(max = 150, message = "title max 150 character")
+	@Size(max = 150, min = 1, message = "title max 150 character")
 	// Column: Title
 	@Parsed(index = 1, defaultNullRead = "default")
 	private String title;
 
 	@Schema(name = "Your product’s description", example = "Made from 100% organic cotton, this classic red men’s polo has a slim fit and signature logo embroidered on the left chest. Machine wash cold; imported.")
 	@NotNull(message = "description is required")
-	@Size(max = 5000, message = "title max 5000 character")
+	@Size(max = 5000, min = 1, message = "title max 5000 character")
 	// Column: Description
 	@Parsed(index = 2, defaultNullRead = "default")
 	private String description;
@@ -161,11 +169,15 @@ public class Product {
 
 	@CreationTimestamp
 	@Temporal(TemporalType.TIMESTAMP)
+	@Column(updatable = false)
 	private Date created;
 
 	@UpdateTimestamp
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updated;
 	
-	private String filename;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "requestid", nullable = false)
+	private Run run;
+	
 }

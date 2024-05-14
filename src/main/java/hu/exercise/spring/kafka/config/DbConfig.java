@@ -25,10 +25,13 @@ public class DbConfig {
 	@Bean
 	public DataSource dataSource() {
 		final DriverManagerDataSource dataSource = new DriverManagerDataSource();
+//		final SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
 		dataSource.setDriverClassName(env.getProperty("driverClassName"));
 		dataSource.setUrl(env.getProperty("url"));
 		dataSource.setUsername(env.getProperty("user"));
 		dataSource.setPassword(env.getProperty("password"));
+		
+//		dataSource.setSuppressClose(true);
 		return dataSource;
 	}
 
@@ -53,6 +56,19 @@ public class DbConfig {
 		if (env.getProperty("hibernate.show_sql") != null) {
 			hibernateProperties.setProperty("hibernate.show_sql", env.getProperty("hibernate.show_sql"));
 		}
+
+		if (env.getProperty("hibernate.generate_statistics") != null) {
+			hibernateProperties.setProperty("hibernate.generate_statistics", env.getProperty("hibernate.generate_statistics"));
+		}
+		
+		if (env.getProperty("hibernate.jdbc.batch_size") != null) {
+			hibernateProperties.setProperty("hibernate.jdbc.batch_size", env.getProperty("hibernate.jdbc.batch_size"));
+		}
+		
+		if (env.getProperty("hibernate.jdbc.batch_versioned_data") != null) {
+			hibernateProperties.setProperty("hibernate.jdbc.batch_versioned_data", env.getProperty("hibernate.jdbc.batch_versioned_data"));
+		}
+		
 		return hibernateProperties;
 	}
 
