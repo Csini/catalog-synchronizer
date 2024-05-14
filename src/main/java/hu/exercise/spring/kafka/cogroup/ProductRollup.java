@@ -6,16 +6,23 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(of = {"productrollupid"})
+@EqualsAndHashCode(of = { "productrollupid", "id", "requestid" })
 public class ProductRollup {
-	
+
 	private String productrollupid;
 
-	private ProductPair pair = new ProductPair();
+	private String id;
 
-	public ProductRollup(String productrollupid) {
+	private String requestid;
+
+	private ProductPair pair;
+
+	public ProductRollup(String productrollupid, String id, String requestid) {
 		super();
 		this.productrollupid = productrollupid;
+		this.id = id;
+		this.requestid = requestid;
+		this.pair = new ProductPair(id, requestid);
 	}
 
 }

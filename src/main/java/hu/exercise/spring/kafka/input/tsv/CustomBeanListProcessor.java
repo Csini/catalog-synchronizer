@@ -46,6 +46,8 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	
 	@Autowired
 	private ProductEventMessageProducer productEventMessageProducer;
+	
+	private int counter = 0;
 
 	public CustomBeanListProcessor() {
 		super(Product.class);
@@ -83,6 +85,8 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 			validMessageProducer.sendEvent(productEvent);
 			
 			productEventMessageProducer.sendMessage(productEvent);
+			
+			counter++;
 
 		} else {
 			LOGGER.error("at " + bean.getId(), violations);
@@ -99,5 +103,10 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 		}
 	}
+
+	public int getCounter() {
+		return counter;
+	}
+	
 
 }

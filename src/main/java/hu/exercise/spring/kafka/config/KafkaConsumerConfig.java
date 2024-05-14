@@ -62,28 +62,31 @@ public class KafkaConsumerConfig {
 //		return factory;
 //	}
 
-//	public ConsumerFactory<String, ProductRollup> productPairConsumerFactory() {
-//		Map<String, Object> props = new HashMap<>();
-//		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-//		props.put(ConsumerConfig.GROUP_ID_CONFIG, "product-intercept");
-//
-//		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-//		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-//
-//		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.LATEST.name().toLowerCase());
-//
-//		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
-//
-//		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-//				new JsonDeserializer<>(ProductRollup.class));
-//	}
-//
-//	@Bean
-//	public ConcurrentKafkaListenerContainerFactory<String, ProductRollup> productPairKafkaListenerContainerFactory() {
-//		ConcurrentKafkaListenerContainerFactory<String, ProductRollup> factory = new ConcurrentKafkaListenerContainerFactory<>();
-//		factory.setConsumerFactory(productPairConsumerFactory());
-//		return factory;
-//	}
+	public ConsumerFactory<String, ProductRollup> productPairConsumerFactory() {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
+
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+
+		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.LATEST.name().toLowerCase());
+		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // default=500
+
+		
+		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
+
+		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
+				new JsonDeserializer<>(ProductRollup.class));
+	}
+
+	@Bean
+	public ConcurrentKafkaListenerContainerFactory<String, ProductRollup> productPairKafkaListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, ProductRollup> factory = new ConcurrentKafkaListenerContainerFactory<>();
+		factory.setConsumerFactory(productPairConsumerFactory());
+		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
+		return factory;
+	}
 
 	public ConsumerFactory<String, Product> pollingUpdateConsumerFactory() {
 		Map<String, Object> props = new HashMap<>();

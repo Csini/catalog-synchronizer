@@ -48,7 +48,7 @@ public class CustomMaxAggregator implements Processor<String, ProductEvent, Stri
 		
 		processCounter++;
 		
-		LOGGER.info("processCounter: " + processCounter);
+//		LOGGER.info("processCounter: " + processCounter);
 
 		ProductRollup oldValue = store.get(rec.key());
 
@@ -56,7 +56,7 @@ public class CustomMaxAggregator implements Processor<String, ProductEvent, Stri
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug("NEW!!!!");
 			}
-			oldValue = new ProductRollup(rec.key());
+			oldValue = new ProductRollup(rec.key(), rec.value().getId(), rec.value().getRequestid().toString());
 		}
 
 		if (LOGGER.isDebugEnabled()) {
@@ -104,6 +104,7 @@ public class CustomMaxAggregator implements Processor<String, ProductEvent, Stri
 	public void close() {
 		// TODO clear store ?
 //		store.
+		LOGGER.info("processCounter: " + processCounter);
 	}
 
 }

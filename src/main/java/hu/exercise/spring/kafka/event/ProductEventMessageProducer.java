@@ -19,7 +19,7 @@ public class ProductEventMessageProducer {
 	public KafkaEnvironment environment;
 
 	public void sendMessage(ProductEvent event) {
-		productTopicKafkaTemplate.send(environment.getRequestid() + "-" + productTopic.name(), event.getRequestid().toString() + "." + event.getId(),
+		productTopicKafkaTemplate.send(productTopic.name(), event.getRequestid().toString() + "." + event.getId(),
 				event);
 	}
 }

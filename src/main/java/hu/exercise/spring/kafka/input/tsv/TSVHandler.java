@@ -49,5 +49,7 @@ public class TSVHandler {
 		
 		// parses everything. All rows will be pumped into the Processor.
 		parser.parse(TSVHandler.class.getResourceAsStream(environment.getFilenane()));
+		
+		LOGGER.warn("readed valid from TSV: " + customBeanListProcessor.getCounter());
 	}
 }

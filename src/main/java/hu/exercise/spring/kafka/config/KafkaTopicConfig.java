@@ -64,7 +64,7 @@ public class KafkaTopicConfig {
 
 	@Bean
 	public NewTopic productRollup() {
-		return new NewTopic(productRollup, 1, (short) 1);
+		return new NewTopic(environment.getRequestid() + "-" + productRollup, 1, (short) 1);
 	}
 	
 	@Bean

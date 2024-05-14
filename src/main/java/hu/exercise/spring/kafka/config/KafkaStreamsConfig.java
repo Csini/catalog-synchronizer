@@ -5,7 +5,6 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.Branched;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
@@ -28,7 +27,6 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
-import hu.exercise.spring.kafka.cogroup.Action;
 import hu.exercise.spring.kafka.cogroup.CustomMaxAggregator;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.event.ProductEvent;
@@ -61,6 +59,9 @@ public class KafkaStreamsConfig {
 
 	@Autowired
 	public KafkaEnvironment environment;
+	
+	@Autowired
+	public StreamsBuilder builder;
 
 	@Bean
 	public Serde<ProductRollup> productRollupSerde() {
@@ -94,8 +95,9 @@ public class KafkaStreamsConfig {
 
 //	}
 
-	@Bean
-	public KStream<String, ProductRollup> productRollupStream(StreamsBuilder builder) {
+//	@Bean
+//	public KStream<String, ProductRollup> productRollupStream(StreamsBuilder builder) {
+	public KStream<String, ProductRollup> productRollupStream() {
 		final String readedFromDbTopic = readedFromDb.name();
 		final String validProductTopic = validProduct.name();
 
@@ -187,39 +189,39 @@ public class KafkaStreamsConfig {
 		builder.addStateStore(keyValueStoreBuilder);
 
 		KStream<String, ProductRollup> lastStream = builder
-				.stream( environment.getRequestid().toString() + "-" + productTopic.name(), Consumed.with(stringSerde, productEventSerde))
+				.stream(productTopic.name(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
 				.process(() -> new CustomMaxAggregator(stateStoreName), stateStoreName);
 
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),
 //				Consumed.with(stringSerde, productRollupSerde));
 
-		lastStream.to(environment.getRequestid() + "-" + totalResultOutputTopic,
+		lastStream.to(totalResultOutputTopic,
 				Produced.with(stringSerde, productRollupSerde));
 		
 		Serde<Product> productSerde = productSerde();
 
-		lastStream
-//		.repartition(
-//				Repartitioned.as(/*environment.getRequestid() + "-" + */totalResultOutputTopic).with(stringSerde,productRollupSerde)
-//				)
-				.split()
-				.branch((key, value) -> Action.INSERT.equals(value.getPair().getAction()),
-						Branched.withConsumer((KStream<String, ProductRollup> ks) -> ks
-								.mapValues((ProductRollup value) -> value.getPair().getReadedFromFile().getProduct())
-//						.repartition(environment.getRequestid()+ "-" + "product-" + Action.INSERT, Produced.with(windowedSerde, productSerde))
-								.to(environment.getRequestid() + "-" +"product-" + Action.INSERT, Produced.with(stringSerde, productSerde))))
-				.branch((key, value) -> Action.UPDATE.equals(value.getPair().getAction()),
-						Branched.withConsumer((KStream<String, ProductRollup> ks) -> ks
-								.mapValues((ProductRollup value) -> value.getPair().getReadedFromFile().getProduct())
-//						.repartition(environment.getRequestid()+ "-" + "product-" + Action.UPDATE, Produced.with(windowedSerde, productSerde))
-								.to(environment.getRequestid() + "-" +"product-" + Action.UPDATE, Produced.with(stringSerde, productSerde))))
-				.branch((key, value) -> Action.DELETE.equals(value.getPair().getAction()),
-						Branched.withConsumer((KStream<String, ProductRollup> ks) -> ks
-								.mapValues((ProductRollup value) -> value.getPair().getReadedFromDb().getProduct())
-//						.repartition(Repartitioned.as(environment.getRequestid()+ "-" + "product-" + Action.DELETE).with(stringSerde, productSerde))
-								.to(environment.getRequestid() + "-" +"product-" + Action.DELETE, Produced.with(stringSerde, productSerde))))
-				.noDefaultBranch();
+//		lastStream
+////		.repartition(
+////				Repartitioned.as(/*environment.getRequestid() + "-" + */totalResultOutputTopic).with(stringSerde,productRollupSerde)
+////				)
+//				.split()
+//				.branch((key, value) -> Action.INSERT.equals(value.getPair().getAction()),
+//						Branched.withConsumer((KStream<String, ProductRollup> ks) -> ks
+//								.mapValues((ProductRollup value) -> value.getPair().getReadedFromFile().getProduct())
+////						.repartition(environment.getRequestid()+ "-" + "product-" + Action.INSERT, Produced.with(windowedSerde, productSerde))
+//								.to(environment.getRequestid() + "-" +"product-" + Action.INSERT, Produced.with(stringSerde, productSerde))))
+//				.branch((key, value) -> Action.UPDATE.equals(value.getPair().getAction()),
+//						Branched.withConsumer((KStream<String, ProductRollup> ks) -> ks
+//								.mapValues((ProductRollup value) -> value.getPair().getReadedFromFile().getProduct())
+////						.repartition(environment.getRequestid()+ "-" + "product-" + Action.UPDATE, Produced.with(windowedSerde, productSerde))
+//								.to(environment.getRequestid() + "-" +"product-" + Action.UPDATE, Produced.with(stringSerde, productSerde))))
+//				.branch((key, value) -> Action.DELETE.equals(value.getPair().getAction()),
+//						Branched.withConsumer((KStream<String, ProductRollup> ks) -> ks
+//								.mapValues((ProductRollup value) -> value.getPair().getReadedFromDb().getProduct())
+////						.repartition(Repartitioned.as(environment.getRequestid()+ "-" + "product-" + Action.DELETE).with(stringSerde, productSerde))
+//								.to(environment.getRequestid() + "-" +"product-" + Action.DELETE, Produced.with(stringSerde, productSerde))))
+//				.noDefaultBranch();
 
 //		new KafkaStreamBrancher<String, ProductRollup>()
 //				.branch((key, value) -> Action.INSERT.equals(value.getPair().getAction()),
@@ -284,18 +286,19 @@ public class KafkaStreamsConfig {
 //        return stream;
 //    }
 
-	@Bean
-	public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
-		return factoryBean -> {
-//	    	new StreamsBuilderFactoryBean(new KafkaStreamsConfiguration(config), new CleanupConfig(true, true));
-			LOGGER.info("StreamsBuilderFactoryBeanConfigurer:" + factoryBean);
-			factoryBean.setCleanupConfig(new CleanupConfig(true, true));
-			factoryBean.getStreamsConfiguration().put(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 0);
-			factoryBean.getStreamsConfiguration().put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
-//			factoryBean.setAutoStartup(false);
-//			factoryBean.getKafkaStreams().cleanUp();
-		};
-	}
+//	@Bean
+//	public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
+//		return factoryBean -> {
+////	    	new StreamsBuilderFactoryBean(new KafkaStreamsConfiguration(config), new CleanupConfig(true, true));
+//			LOGGER.info("StreamsBuilderFactoryBeanConfigurer:" + factoryBean);
+//			factoryBean.setCleanupConfig(new CleanupConfig(true, true));
+//			factoryBean.getStreamsConfiguration().put(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 0);
+//			factoryBean.getStreamsConfiguration().put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
+////			factoryBean.setAutoStartup(false);
+////			factoryBean.getKafkaStreams().cleanUp();
+////			factoryBean.getKafkaStreams().
+//		};
+//	}
 
 //	@Bean
 //	KafkaStreams kafkaStreams(StreamsBuilder builder, KafkaStreamsConfiguration streamsConfig) {
