@@ -1,28 +1,29 @@
 package hu.exercise.spring.kafka.cogroup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@EqualsAndHashCode(of = { "productrollupid", "id", "requestid" })
+//@NoArgsConstructor
+@EqualsAndHashCode(of = { "requestid", "flushid" })
 public class ProductRollup {
-
-	private String productrollupid;
-
-	private String id;
 
 	private String requestid;
 
-	private ProductPair pair;
+	private int flushid;
 
-	public ProductRollup(String productrollupid, String id, String requestid) {
+	private int processed;
+
+	private List<ProductPair> pairList = new ArrayList<>();
+
+	public ProductRollup(String requestid, int flushid, int processed) {
 		super();
-		this.productrollupid = productrollupid;
-		this.id = id;
 		this.requestid = requestid;
-		this.pair = new ProductPair(id, requestid);
+		this.flushid = flushid;
+		this.processed = processed;
 	}
 
 }

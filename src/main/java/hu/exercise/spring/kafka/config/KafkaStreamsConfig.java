@@ -4,12 +4,9 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.Windowed;
-import org.apache.kafka.streams.kstream.WindowedSerdes;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
@@ -21,16 +18,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
-import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
-import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
-import hu.exercise.spring.kafka.cogroup.CustomMaxAggregator;
+import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
+import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
+import hu.exercise.spring.kafka.cogroup.ProductPair;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
+import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.service.ProductService;
 
 @EnableKafka
 @EnableKafkaStreams
@@ -59,13 +58,21 @@ public class KafkaStreamsConfig {
 
 	@Autowired
 	public KafkaEnvironment environment;
-	
+
 	@Autowired
 	public StreamsBuilder builder;
+
+	@Autowired
+	private ProductService productService;
 
 	@Bean
 	public Serde<ProductRollup> productRollupSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProductRollup.class));
+	}
+
+	@Bean
+	public Serde<ProductPair> productPairSerde() {
+		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProductPair.class));
 	}
 
 	@Bean
@@ -76,6 +83,11 @@ public class KafkaStreamsConfig {
 	@Bean
 	public Serde<Product> productSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(Product.class));
+	}
+
+	@Bean
+	public Serde<Flushed> flushedSerde() {
+		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(Flushed.class));
 	}
 
 //	@Value(value = "${spring.kafka.streams.state.dir}")
@@ -97,16 +109,17 @@ public class KafkaStreamsConfig {
 
 //	@Bean
 //	public KStream<String, ProductRollup> productRollupStream(StreamsBuilder builder) {
-	public KStream<String, ProductRollup> productRollupStream() {
+	public KStream<String, Flushed> productRollupStream() {
 		final String readedFromDbTopic = readedFromDb.name();
 		final String validProductTopic = validProduct.name();
 
 		final String totalResultOutputTopic = productRollup.name();
 
 		final Serde<String> stringSerde = Serdes.String();
-		final Serde<Windowed<String>> windowedSerde = WindowedSerdes.sessionWindowedSerdeFrom(String.class);
+//		final Serde<Windowed<String>> windowedSerde = WindowedSerdes.sessionWindowedSerdeFrom(String.class);
 
 		Serde<ProductEvent> productEventSerde = productEventSerde();
+		Serde<ProductPair> productPairSerde = productPairSerde();
 //		final KStream<String, ProductEvent> readedStream = builder
 //				.stream(readedFromDbTopic, Consumed.with(stringSerde, productEventSerde))
 //				.filter((key, value) -> environment.getRequestid().equals(value.getRequestid()));
@@ -120,7 +133,7 @@ public class KafkaStreamsConfig {
 //		final KGroupedStream<String, ProductEvent> readedGrouped = readedStream.groupByKey();
 //		final KGroupedStream<String, ProductEvent> validGrouped = validStream.groupByKey();
 //
-		Serde<ProductRollup> productRollupSerde = productRollupSerde();
+//		Serde<ProductRollup> productRollupSerde = productRollupSerde();
 //		KTable<String, ProductRollup> stream = readedGrouped.cogroup(productAggregator)
 //				.cogroup(validGrouped, productAggregator)
 ////				.aggregate(() -> new ProductRollup())
@@ -184,21 +197,21 @@ public class KafkaStreamsConfig {
 
 		String stateStoreName = "aggStore" + "-" + environment.getRequestid().toString();
 
-		StoreBuilder<KeyValueStore<String, ProductRollup>> keyValueStoreBuilder = Stores
-				.keyValueStoreBuilder(Stores.persistentKeyValueStore(stateStoreName), stringSerde, productRollupSerde);
+		StoreBuilder<KeyValueStore<String, ProductPair>> keyValueStoreBuilder = Stores
+				.keyValueStoreBuilder(Stores.persistentKeyValueStore(stateStoreName), stringSerde, productPairSerde);
 		builder.addStateStore(keyValueStoreBuilder);
 
-		KStream<String, ProductRollup> lastStream = builder
+		KStream<String, Flushed> lastStream = builder
 				.stream(productTopic.name(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
-				.process(() -> new CustomMaxAggregator(stateStoreName), stateStoreName);
+				.process(() -> new CustomProductPairAggregator(stateStoreName, environment), stateStoreName)
+				.process(() -> new CustomDBWriter(environment, productService));
 
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),
 //				Consumed.with(stringSerde, productRollupSerde));
 
-		lastStream.to(totalResultOutputTopic,
-				Produced.with(stringSerde, productRollupSerde));
-		
+		lastStream.to(totalResultOutputTopic, Produced.with(stringSerde, flushedSerde()));
+
 		Serde<Product> productSerde = productSerde();
 
 //		lastStream

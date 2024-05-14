@@ -16,7 +16,7 @@ public class CustomProductRepository{
 	public EntityManager entityManager;
 
     public Stream<Product> findAllProductsNative(String requestid){
-        return entityManager.createQuery("FROM Product p JOIN p.run r WHERE r.requestid <> :id", Product.class)
+        return entityManager.createQuery("FROM Product p JOIN p.run r WHERE r.requestid <> :id order by id asc", Product.class)
           .setParameter("id", requestid)
           .getResultStream();
     }

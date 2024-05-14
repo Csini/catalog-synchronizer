@@ -17,9 +17,17 @@ public class ProductEventMessageProducer {
 	
 	@Autowired
 	public KafkaEnvironment environment;
+	
+	private int counter;
 
 	public void sendMessage(ProductEvent event) {
 		productTopicKafkaTemplate.send(productTopic.name(), event.getRequestid().toString() + "." + event.getId(),
 				event);
+		counter++;
 	}
+
+	public int getCounter() {
+		return counter;
+	}
+	
 }

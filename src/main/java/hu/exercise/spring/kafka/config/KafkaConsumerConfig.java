@@ -24,6 +24,7 @@ import org.springframework.util.backoff.FixedBackOff;
 
 import hu.exercise.spring.kafka.KafkaCommandLineAppStartupRunner;
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.input.Product;
 
@@ -62,7 +63,7 @@ public class KafkaConsumerConfig {
 //		return factory;
 //	}
 
-	public ConsumerFactory<String, ProductRollup> productPairConsumerFactory() {
+	public ConsumerFactory<String, Flushed> productPairConsumerFactory() {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
@@ -77,14 +78,14 @@ public class KafkaConsumerConfig {
 		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
 
 		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-				new JsonDeserializer<>(ProductRollup.class));
+				new JsonDeserializer<>(Flushed.class));
 	}
 
 	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, ProductRollup> productPairKafkaListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, ProductRollup> factory = new ConcurrentKafkaListenerContainerFactory<>();
+	public ConcurrentKafkaListenerContainerFactory<String, Flushed> productPairKafkaListenerContainerFactory() {
+		ConcurrentKafkaListenerContainerFactory<String, Flushed> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(productPairConsumerFactory());
-		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
+//		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
 		return factory;
 	}
 

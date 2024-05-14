@@ -4,19 +4,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.kstream.KStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.stereotype.Component;
 
-import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.RunMessageProducer;
