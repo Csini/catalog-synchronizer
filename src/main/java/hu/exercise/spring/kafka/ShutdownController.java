@@ -22,7 +22,7 @@ public class ShutdownController implements ApplicationContextAware {
 
 	public void shutdownContext() {
 
-		LOGGER.warn("Shutting down Context!");
+		LOGGER.warn("Shutting down Context...");
 
 		// TODO
 //    	environment.setRequestid(null);

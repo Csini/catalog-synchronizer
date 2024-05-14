@@ -24,6 +24,7 @@ import org.springframework.util.backoff.FixedBackOff;
 
 import hu.exercise.spring.kafka.KafkaCommandLineAppStartupRunner;
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.ShutdownController;
 import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.input.Product;
@@ -45,6 +46,9 @@ public class KafkaConsumerConfig {
 	
 	@Autowired
 	public KafkaEnvironment environment;
+	
+	@Autowired
+	public ShutdownController shutdownController;
 
 //	public ConsumerFactory<String, String> consumerFactory(String groupId) {
 //		Map<String, Object> props = new HashMap<>();
@@ -186,10 +190,11 @@ public class KafkaConsumerConfig {
 
 			// TODO
 			LOGGER.error(String.format("consumed record %s because this exception was thrown",
-					consumerRecord.toString(), e.getClass().getName()));
+					consumerRecord.toString(), e.getClass().getName()), e);
+			shutdownController.shutdownContext();
 		}, fixedBackOff);
 		// Commented because of the test
-		errorHandler.addRetryableExceptions(org.sqlite.SQLiteException.class, org.springframework.orm.jpa.JpaSystemException.class);
+//		errorHandler.addRetryableExceptions(org.sqlite.SQLiteException.class, org.springframework.orm.jpa.JpaSystemException.class);
 		errorHandler.addNotRetryableExceptions(NullPointerException.class);
 		return errorHandler;
 	}

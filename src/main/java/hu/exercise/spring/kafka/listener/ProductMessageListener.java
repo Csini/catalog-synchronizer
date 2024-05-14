@@ -1,5 +1,8 @@
 package hu.exercise.spring.kafka.listener;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,20 +37,32 @@ public class ProductMessageListener {
 
 	@Autowired
 	public ProductEventMessageProducer productEventMessageProducer;
-	
+
 	@Autowired
 	ShutdownController shutdownController;
-	
 
 	@KafkaListener(topics = "#{__listener.topic}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
 	public void productPairListener(Flushed flushed) {
-		LOGGER.info("Received flushed message: " + flushed);
+		LOGGER.warn("Received flushed message: " + flushed);
+
+		int countEvent = productEventMessageProducer.getCounter();
+		int countProcessed = flushed.getCountProcessed();
+		LOGGER.warn("countEvent: " + countEvent);
+		BigDecimal temp = BigDecimal.valueOf(countProcessed).divide(BigDecimal.valueOf(countEvent), 2, RoundingMode.CEILING);
+		long i = temp.multiply(BigDecimal.valueOf(100)).intValue();
 		
-		LOGGER.warn("countProcessed: " + flushed.getCountProcessed());
-		
-		if(flushed.getCountProcessed()==productEventMessageProducer.getCounter()) {
+		LOGGER.warn("i: " + i);
+
+		StringBuilder sb = new StringBuilder();
+		for (int j = 0; j < i; j++) {
+			sb.append("#");
+		}
+		System.out.print("[" + String.format("%-100s", sb.toString()) + "] " + i + "%\r");
+
+		if (countProcessed == countEvent) {
 			shutdownController.shutdownContext();
 		}
+
 	}
 
 	public String getTopic() {
