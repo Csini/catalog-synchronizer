@@ -76,6 +76,8 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 		Set<ConstraintViolation<Product>> violations = validator.validate(bean);
 
+		counter++;
+
 		if (violations.isEmpty()) {
 
 //			repository.save(bean);
@@ -86,8 +88,6 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 			
 			productEventMessageProducer.sendMessage(productEvent);
 			
-			counter++;
-
 		} else {
 			LOGGER.error("at " + bean.getId(), violations);
 			// send to invalid topic

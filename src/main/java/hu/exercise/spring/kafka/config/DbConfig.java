@@ -11,12 +11,16 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableJpaRepositories(basePackages = "hu.exercise.spring.kafka.repository")
 @PropertySource("persistence.properties")
+@EnableTransactionManagement
 public class DbConfig {
 
 	@Autowired
@@ -30,7 +34,7 @@ public class DbConfig {
 		dataSource.setUrl(env.getProperty("url"));
 		dataSource.setUsername(env.getProperty("user"));
 		dataSource.setPassword(env.getProperty("password"));
-		
+
 //		dataSource.setSuppressClose(true);
 		return dataSource;
 	}
@@ -58,18 +62,27 @@ public class DbConfig {
 		}
 
 		if (env.getProperty("hibernate.generate_statistics") != null) {
-			hibernateProperties.setProperty("hibernate.generate_statistics", env.getProperty("hibernate.generate_statistics"));
+			hibernateProperties.setProperty("hibernate.generate_statistics",
+					env.getProperty("hibernate.generate_statistics"));
 		}
-		
+
 		if (env.getProperty("hibernate.jdbc.batch_size") != null) {
 			hibernateProperties.setProperty("hibernate.jdbc.batch_size", env.getProperty("hibernate.jdbc.batch_size"));
 		}
-		
+
 		if (env.getProperty("hibernate.jdbc.batch_versioned_data") != null) {
-			hibernateProperties.setProperty("hibernate.jdbc.batch_versioned_data", env.getProperty("hibernate.jdbc.batch_versioned_data"));
+			hibernateProperties.setProperty("hibernate.jdbc.batch_versioned_data",
+					env.getProperty("hibernate.jdbc.batch_versioned_data"));
 		}
-		
+
 		return hibernateProperties;
+	}
+
+	@Bean
+	public PlatformTransactionManager transactionManager() {
+		JpaTransactionManager transactionManager = new JpaTransactionManager();
+		transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
+		return transactionManager;
 	}
 
 }

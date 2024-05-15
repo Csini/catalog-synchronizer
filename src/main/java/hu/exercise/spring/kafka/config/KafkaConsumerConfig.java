@@ -34,7 +34,7 @@ import hu.exercise.spring.kafka.input.Product;
 public class KafkaConsumerConfig {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerConfig.class);
-	
+
 	@Value(value = "${spring.kafka.bootstrap-servers}")
 	private String bootstrapAddress;
 
@@ -43,10 +43,10 @@ public class KafkaConsumerConfig {
 
 	@Value(value = "${kafka.backoff.max_failure}")
 	private Long maxAttempts;
-	
+
 	@Autowired
 	public KafkaEnvironment environment;
-	
+
 	@Autowired
 	public ShutdownController shutdownController;
 
@@ -78,7 +78,6 @@ public class KafkaConsumerConfig {
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.LATEST.name().toLowerCase());
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // default=500
 
-		
 		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
 
 		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
@@ -89,6 +88,7 @@ public class KafkaConsumerConfig {
 	public ConcurrentKafkaListenerContainerFactory<String, Flushed> productPairKafkaListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, Flushed> factory = new ConcurrentKafkaListenerContainerFactory<>();
 		factory.setConsumerFactory(productPairConsumerFactory());
+		factory.setCommonErrorHandler(errorHandler());
 //		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
 		return factory;
 	}
@@ -191,7 +191,7 @@ public class KafkaConsumerConfig {
 			// TODO
 			LOGGER.error(String.format("consumed record %s because this exception was thrown",
 					consumerRecord.toString(), e.getClass().getName()), e);
-			shutdownController.shutdownContext();
+			shutdownController.shutdownContextWithError(9);
 		}, fixedBackOff);
 		// Commented because of the test
 //		errorHandler.addRetryableExceptions(org.sqlite.SQLiteException.class, org.springframework.orm.jpa.JpaSystemException.class);

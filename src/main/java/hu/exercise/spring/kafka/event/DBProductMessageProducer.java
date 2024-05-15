@@ -42,38 +42,41 @@ public class DBProductMessageProducer {
 
 	@Autowired
 	public KafkaEnvironment environment;
-	
-	@PersistenceContext
-	public EntityManager entityManager;
-	
+
+//	@PersistenceContext
+//	public EntityManager entityManager;
+
 	@Autowired
 	private ProductEventMessageProducer productEventMessageProducer;
+	
+	private int counter;
 
-	@Transactional(readOnly = true)
+//	@Transactional(readOnly = true)
+//	@Transactional
 	public void sendMessages() throws IOException {
+		LOGGER.info("sendMessages");
+		try {
+			backupDB();
 
-		backupDB();
+			productService.getAllProducts(String.valueOf(environment.getRequestid()))
+					// .peek(entityManager::detach)
+					.forEach(p -> {
 
-		AtomicInteger counter = new AtomicInteger(0);
-		
-		try (Stream<Product> products = productService.getAllProducts(String.valueOf(environment.getRequestid()))) {
-			products.peek(entityManager::detach)
-			.forEach(p -> {
-
-				counter.incrementAndGet();
+						counter++;
 //				if (!String.valueOf(environment.getRequestid()).equals(p.getRun().getRequestid())) {
-					LOGGER.info("sending product to readedFromDb: " + p);
-					ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
-					readedFromDbKafkaTemplate.send(readedFromDb.name(), 
-							environment.getRequestid() + "." + p.getId(),
-							event);
-					
-					productEventMessageProducer.sendMessage(event);
+						LOGGER.info("sending product to readedFromDb: " + p);
+						ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
+						readedFromDbKafkaTemplate.send(readedFromDb.name(),
+								environment.getRequestid() + "." + p.getId(), event);
+
+						productEventMessageProducer.sendMessage(event);
 //				}
-			});
-	    }
-		
-		LOGGER.warn("sending events to readedFromDb: " + counter.get());
+					});
+		} catch (IOException e) {
+			LOGGER.error("", e);
+			throw e;
+		}
+		LOGGER.warn("sending events to readedFromDb: " + counter);
 	}
 
 	private void backupDB() throws IOException {
@@ -91,6 +94,10 @@ public class DBProductMessageProducer {
 		}
 
 		// INSERT INTO new_db.table_name SELECT * FROM old_db.table_name;
+	}
+	
+	public int getCounter() {
+		return counter;
 	}
 
 }

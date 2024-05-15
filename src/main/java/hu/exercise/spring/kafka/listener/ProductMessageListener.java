@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.ShutdownController;
 import hu.exercise.spring.kafka.cogroup.Flushed;
+import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.ProductEventMessageProducer;
 import hu.exercise.spring.kafka.service.ProductService;
 
@@ -40,6 +41,9 @@ public class ProductMessageListener {
 
 	@Autowired
 	ShutdownController shutdownController;
+	
+	@Autowired
+	DBProductMessageProducer dbProductMessageProducer;
 
 	@KafkaListener(topics = "#{__listener.topic}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
 	public void productPairListener(Flushed flushed) {
@@ -59,7 +63,7 @@ public class ProductMessageListener {
 		}
 		System.out.print("[" + String.format("%-100s", sb.toString()) + "] " + i + "%\r");
 
-		if (countProcessed == countEvent) {
+		if (countProcessed >= countEvent) {
 			shutdownController.shutdownContext();
 		}
 
