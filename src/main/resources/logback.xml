@@ -22,13 +22,15 @@
      
      <logger name="hu.exercise.spring.kafka" level="warn" />
      <logger name="hu.exercise.spring.kafka.cogroup" level="info" />
+     <logger name="hu.exercise.spring.kafka.event" level="warn" />
+     <logger name="org.springframework.transaction.interceptor" level="warn" />
      
      
      <logger name="net.ttddyy.dsproxy.listener" level="warn" />
      
      <logger name="org.apache.kafka.streams.KafkaStreams" level="debug" />
    
-    <root level="debug">
+    <root level="warn">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>

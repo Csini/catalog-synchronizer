@@ -2,8 +2,10 @@ package hu.exercise.spring.kafka;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,60 +46,96 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 	@Autowired
 	StreamsBuilderFactoryBean factory;
-	
+
 	@Autowired
 	KafkaStreamsConfig streamsConfig;
 
+//	@Autowired
+//	PlatformTransactionManager txManager;
+
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String... args) {
 		LOGGER.info("args: " + args);
-		
-		// save metadata
 
-		Run run = environment.getRun();
-		// TODO args[0]
-		run.setFilenane("/input/file2.txt");
+		try {
 
-		runService.saveRun(run);
-		runMessageProducer.sendRunMessage(run);
+			// save metadata
 
-		LOGGER.warn(run.toString());
-		
-		ExecutorService service = Executors.newFixedThreadPool(2);
-		service.submit(() -> {
-			try {
-				dbProductMessageProducer.sendMessages();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
+//		DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+//		// explicitly setting the transaction name is something that can be done only
+//		// programmatically
+//		def.setName("SomeTxName");
+//		def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+//
+//		TransactionStatus status = txManager.getTransaction(def);
+
+			Run run = environment.getRun();
+			// TODO args[0]
+			run.setFilenane("/input/file1.txt");
+
+			runService.saveRun(run);
+			runMessageProducer.sendRunMessage(run);
+
+			LOGGER.warn(run.toString());
+
+			ExecutorService service = Executors.newFixedThreadPool(2);
+			Future<?> readFromDb = service.submit(() -> {
+				try {
+					dbProductMessageProducer.sendMessages();
+				} catch (Exception e) {
+					LOGGER.error("db", e);
+					throw new RuntimeException(e);
+				}
+			});
+			Future<?> readFromTsv = service.submit(() -> {
+				try {
+					tsvHandler.processInputFile();
+				} catch (Exception e) {
+					LOGGER.error("tsv", e);
+					throw new RuntimeException(e);
+				}
+			});
+
+			readFromDb.get();
+			readFromTsv.get();
+
+			service.shutdown();
+
+			while (!service.awaitTermination(100, TimeUnit.MILLISECONDS)) {
 			}
-		});
-		service.submit(() -> {
-			try {
-				tsvHandler.processInputFile();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		});
 
-		service.shutdown();
-		service.awaitTermination(1, TimeUnit.MINUTES);
+			streamsConfig.productRollupStream();
 
-		
-		streamsConfig.productRollupStream();
-		
-		
-		factory.setCleanupConfig(new CleanupConfig(true, true));
-		factory.start();
+			factory.setCleanupConfig(new CleanupConfig(true, true));
+			factory.setStreamsUncaughtExceptionHandler(ex -> {
+				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
+//			return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD;
+				shutdownController.shutdownContextWithError(2);
+				return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_APPLICATION;
+			});
+			factory.start();
 
 //		KafkaStreams kafkaStreams = factory.getKafkaStreams();
 ////		kafkaStreams.pause();
 ////		kafkaStreams.cleanUp();
 //		kafkaStreams.start();
-		// TODO
+			// TODO
 
 //		tsvHandler.processInputFile("/input/file2.txt");
 //		tsvHandler.processInputFile("/input/file3.txt");
 
 //		shutdownController.shutdownContext();
+
+//		try {
+//			// put your business logic here
+//		} catch (MyException ex) {
+//			txManager.rollback(status);
+//			throw ex;
+//		}
+//		txManager.commit(status);
+		} catch (Exception e) {
+			LOGGER.error("commandline", e);
+			shutdownController.shutdownContextWithError(9);
+		}
 	}
 }

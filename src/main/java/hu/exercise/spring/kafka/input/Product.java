@@ -1,12 +1,13 @@
 package hu.exercise.spring.kafka.input;
 
+import java.lang.reflect.Field;
 import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SelectBeforeUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.URL;
+import org.springframework.data.domain.Persistable;
 
 import com.univocity.parsers.annotations.Convert;
 import com.univocity.parsers.annotations.EnumOptions;
@@ -27,6 +28,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -37,7 +39,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 /**
  * {@link} https://support.google.com/merchants/answer/7052112?hl=en#zippy=%2Cother-requirements%2Cformatting-your-product-data
@@ -54,8 +55,7 @@ import lombok.ToString;
 @Entity
 @Table(name = "PRODUCT")
 @EqualsAndHashCode(of = "id")
-@SelectBeforeUpdate(false)
-public class Product {
+public class Product implements Persistable<String> {
 
 	@Id
 	@Schema(name = "Your product’s unique identifier", example = "A2B4")
@@ -175,9 +175,49 @@ public class Product {
 	@UpdateTimestamp
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updated;
-	
+
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "requestid", nullable = false)
 	private Run run;
-	
+
+	/**
+	 * Fill current object fields with new object values, ignoring new NULLs. Old
+	 * values are overwritten.
+	 *
+	 * @param newObject Same type object with new values.
+	 * @see https://stackoverflow.com/a/56289053
+	 */
+	public void merge(Object newObject) {
+
+		assert this.getClass().getName().equals(newObject.getClass().getName());
+
+		for (Field field : this.getClass().getDeclaredFields()) {
+
+			for (Field newField : newObject.getClass().getDeclaredFields()) {
+
+				if (field.getName().equals(newField.getName())) {
+
+					try {
+
+						field.set(this, newField.get(newObject) == null ? field.get(this) : newField.get(newObject));
+
+					} catch (IllegalAccessException ignore) {
+						// Field update exception on final modifier and other cases.
+					}
+				}
+			}
+		}
+	}
+
+	@Transient
+	private boolean insert;
+
+	@Override
+	public boolean isNew() {
+		return this.insert;
+	}
+
+	public void setNew(boolean insert) {
+		this.insert = insert;
+	}
 }

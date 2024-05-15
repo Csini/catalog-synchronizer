@@ -20,6 +20,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
@@ -64,6 +65,9 @@ public class KafkaStreamsConfig {
 
 	@Autowired
 	private ProductService productService;
+	
+	@Autowired
+	private PlatformTransactionManager txManager;
 
 	@Bean
 	public Serde<ProductRollup> productRollupSerde() {
@@ -205,7 +209,7 @@ public class KafkaStreamsConfig {
 				.stream(productTopic.name(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
 				.process(() -> new CustomProductPairAggregator(stateStoreName, environment), stateStoreName)
-				.process(() -> new CustomDBWriter(environment, productService));
+				.process(() -> new CustomDBWriter(environment, productService, txManager));
 
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),
 //				Consumed.with(stringSerde, productRollupSerde));

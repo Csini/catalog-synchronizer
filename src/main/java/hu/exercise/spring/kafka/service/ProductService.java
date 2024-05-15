@@ -1,5 +1,6 @@
 package hu.exercise.spring.kafka.service;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 import hu.exercise.spring.kafka.input.Product;
@@ -21,8 +22,10 @@ public interface ProductService {
 
 	public long getCountAllProducts();
 
-	public void bulkUpdateProducts(Iterable<Product> productList);
+//	public void bulkUpdateProducts(Iterable<Product> productList);
 
-	public void bulkInsertProducts(Iterable<Product> productList);
+//	public void bulkInsertProducts(Iterable<Product> productList);
+	
+//	public Map<String, Product> getReadedFromDbMap();
 
 }

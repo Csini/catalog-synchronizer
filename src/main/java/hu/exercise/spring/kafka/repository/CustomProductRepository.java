@@ -12,21 +12,21 @@ import jakarta.persistence.PersistenceContext;
 @Repository
 public class CustomProductRepository{
 	
-	@PersistenceContext
-	public EntityManager entityManager;
-
-    public Stream<Product> findAllProductsNative(String requestid){
-        return entityManager.createQuery("FROM Product p JOIN p.run r WHERE r.requestid <> :id order by id asc", Product.class)
-          .setParameter("id", requestid)
-          .getResultStream();
-    }
+//	@PersistenceContext
+//	public EntityManager entityManager;
+//
+//    public Stream<Product> findAllProductsNative(String requestid){
+//        return entityManager.createQuery("FROM Product p JOIN p.run r WHERE r.requestid <> :id order by id asc", Product.class)
+//          .setParameter("id", requestid)
+//          .getResultStream();
+//    }
     
     
-    public Stream<Product> updateProductsNative(String requestid){
-        return entityManager.createQuery("FROM Product p JOIN p.run r WHERE r.requestid <> :id", Product.class)
-          .setParameter("id", requestid)
-          .getResultStream();
-    }
+//    public Stream<Product> updateProductsNative(String requestid){
+//        return entityManager.createQuery("FROM Product p JOIN p.run r WHERE r.requestid <> :id", Product.class)
+//          .setParameter("id", requestid)
+//          .getResultStream();
+//    }
 
     public void updateAll(Iterable<Product> productList) {
     	
@@ -48,26 +48,26 @@ public class CustomProductRepository{
     	
 	}
     
-    public void insertAll(Iterable<Product> productList) {
-    	int i=0;
-
-		for(Product p:productList) {
-		    if(++i%49==0) {
-		        entityManager.flush();
-		    }
-		    entityManager.persist(p);
-		}
-	}
-
-	public void deleteAll(Iterable<Product> productList) {
-		int i=0;
-
-		for(Product p:productList) {
-		    if(++i%49==0) {
-		        entityManager.flush();
-		    }
-		    entityManager.remove(p);
-		}
-		
-	}
+//    public void insertAll(Iterable<Product> productList) {
+//    	int i=0;
+//
+//		for(Product p:productList) {
+//		    if(++i%49==0) {
+//		        entityManager.flush();
+//		    }
+//		    entityManager.persist(p);
+//		}
+//	}
+//
+//	public void deleteAll(Iterable<Product> productList) {
+//		int i=0;
+//
+//		for(Product p:productList) {
+//		    if(++i%49==0) {
+//		        entityManager.flush();
+//		    }
+//		    entityManager.remove(p);
+//		}
+//		
+//	}
 }
