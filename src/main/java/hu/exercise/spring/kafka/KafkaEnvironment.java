@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 
 import hu.exercise.spring.kafka.input.Run;
+import hu.exercise.spring.kafka.output.Testsuites;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.NonNull;
@@ -33,8 +34,9 @@ public class KafkaEnvironment {
 
 	// TODO
 	@NonNull
-	public String getFilenane() {
-		return this.run.getFilenane();
+	public String getFilename() {
+		return this.run.getFilename();
 	}
+	
 }
  

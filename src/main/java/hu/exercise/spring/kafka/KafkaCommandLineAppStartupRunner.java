@@ -1,5 +1,7 @@
 package hu.exercise.spring.kafka;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -20,6 +22,8 @@ import hu.exercise.spring.kafka.event.RunMessageProducer;
 import hu.exercise.spring.kafka.input.Run;
 import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 import hu.exercise.spring.kafka.service.RunService;
+import jakarta.annotation.PreDestroy;
+import jakarta.xml.bind.JAXBException;
 
 @Component
 public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
@@ -53,6 +57,9 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 //	@Autowired
 //	PlatformTransactionManager txManager;
 
+	@Autowired
+	KafkaReportController reportController;
+
 	@Override
 	public void run(String... args) {
 		LOGGER.info("args: " + args);
@@ -71,10 +78,11 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilenane("/input/file1.txt");
+			run.setFilename("file3.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
+//			MDC.put("requestid", environment.getRequestid().toString());
 
 			LOGGER.warn(run.toString());
 
@@ -110,32 +118,20 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			factory.setStreamsUncaughtExceptionHandler(ex -> {
 				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
 //			return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD;
-				shutdownController.shutdownContextWithError(2);
+				shutdownController.shutdownContextWithError(2, ex);
 				return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_APPLICATION;
 			});
 			factory.start();
 
-//		KafkaStreams kafkaStreams = factory.getKafkaStreams();
-////		kafkaStreams.pause();
-////		kafkaStreams.cleanUp();
-//		kafkaStreams.start();
-			// TODO
-
-//		tsvHandler.processInputFile("/input/file2.txt");
-//		tsvHandler.processInputFile("/input/file3.txt");
-
-//		shutdownController.shutdownContext();
-
-//		try {
-//			// put your business logic here
-//		} catch (MyException ex) {
-//			txManager.rollback(status);
-//			throw ex;
-//		}
-//		txManager.commit(status);
 		} catch (Exception e) {
 			LOGGER.error("commandline", e);
-			shutdownController.shutdownContextWithError(9);
+			shutdownController.shutdownContextWithError(9, e);
 		}
+	}
+
+	@PreDestroy
+	public void onExit() throws IOException, JAXBException, URISyntaxException {
+		LOGGER.info("###STOP FROM THE LIFECYCLE###");
+		reportController.createReport();
 	}
 }

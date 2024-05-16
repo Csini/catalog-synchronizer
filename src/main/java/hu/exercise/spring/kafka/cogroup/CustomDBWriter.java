@@ -73,41 +73,15 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 		AtomicInteger counter = new AtomicInteger();
 
-		Map<Action, List<Product>> groupedProductRollups = rec.value().getPairList().stream()
-				.map((ProductPair pair) -> {
-					Product productToSave = pair.getProductToSave();
-					Action action = pair.getAction();
-//				LOGGER.warn("" + productToSave.getId() + ": " + action);
-					counter.incrementAndGet();
-					return pair;
+		Map<Action, List<Product>> groupedProductRollups = group(rec, counter);
 
-				}).collect(Collectors.groupingBy(a -> a.getAction(), Collectors.mapping(pair -> {
-					Product productToSave = pair.getProductToSave();
-
-					// merge with attached JPA Entity
-					Product readedFromDb = readedFromDbMap.get(productToSave.getId());
-
-					if (readedFromDb != null) {
-						if (LOGGER.isDebugEnabled()) {
-							LOGGER.debug("merging: " + pair.getAction() + " " + pair.getId());
-						}
-						readedFromDbMap.remove(productToSave.getId());
-						readedFromDb.merge(productToSave);
-//				readedFromDb.setNew(false);)
-						return readedFromDb;
-					}
-
-					productToSave.setNew(Action.INSERT.equals(pair.getAction()));
-
-					return productToSave;
-				}, Collectors.toList())));
-
-		groupedProductRollups.entrySet().forEach(entry -> {
-			LOGGER.warn(entry.getKey() + ": " + entry.getValue().size());
-		});
+//		groupedProductRollups.entrySet().forEach(entry -> {
+//			LOGGER.warn(entry.getKey() + ": " + entry.getValue().size());
+//		});
 
 		Flushed flushed = Flushed.builder().requestid(environment.getRequestid().toString())
-				.countProcessed(rec.value().getProcessed()).build();
+				.sumProcessed(rec.value().getProcessed()).build();
+
 		if (groupedProductRollups.containsKey(Action.DELETE)) {
 //				groupedProductRollups.get(Action.DELETE).forEach(p -> productService.deleteProduct(p.getId()));
 			List<Product> productList = groupedProductRollups.get(Action.DELETE);
@@ -137,6 +111,38 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 		context.forward(
 				new Record<String, Flushed>(environment.getRequestid().toString(), flushed, new Date().getTime()));
+	}
+
+	private Map<Action, List<Product>> group(Record<String, ProductRollup> rec, AtomicInteger counter) {
+		Map<Action, List<Product>> groupedProductRollups = rec.value().getPairList().stream()
+				.map((ProductPair pair) -> {
+					Product productToSave = pair.getProductToSave();
+					Action action = pair.getAction();
+//				LOGGER.warn("" + productToSave.getId() + ": " + action);
+					counter.incrementAndGet();
+					return pair;
+
+				}).collect(Collectors.groupingBy(a -> a.getAction(), Collectors.mapping(pair -> {
+					Product productToSave = pair.getProductToSave();
+
+					// merge with attached JPA Entity
+					Product readedFromDb = readedFromDbMap.get(productToSave.getId());
+
+					if (readedFromDb != null) {
+						if (LOGGER.isDebugEnabled()) {
+							LOGGER.debug("merging: " + pair.getAction() + " " + pair.getId());
+						}
+						readedFromDbMap.remove(productToSave.getId());
+						readedFromDb.merge(productToSave);
+//				readedFromDb.setNew(false);)
+						return readedFromDb;
+					}
+
+					productToSave.setNew(Action.INSERT.equals(pair.getAction()));
+
+					return productToSave;
+				}, Collectors.toList())));
+		return groupedProductRollups;
 	}
 
 	@Override

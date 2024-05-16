@@ -16,18 +16,14 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
-import hu.exercise.spring.kafka.KafkaCommandLineAppStartupRunner;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.ShutdownController;
 import hu.exercise.spring.kafka.cogroup.Flushed;
-import hu.exercise.spring.kafka.cogroup.ProductRollup;
-import hu.exercise.spring.kafka.input.Product;
 
 @EnableKafka
 @Configuration
@@ -71,6 +67,7 @@ public class KafkaConsumerConfig {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
+//		props.put(ConsumerConfig.CLIENT_ID_CONFIG, environment.getRequestid().toString());
 
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
@@ -93,96 +90,6 @@ public class KafkaConsumerConfig {
 		return factory;
 	}
 
-	public ConsumerFactory<String, Product> pollingUpdateConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
-
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.LATEST.name().toLowerCase());
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // default=500
-
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
-
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-				new JsonDeserializer<>(Product.class));
-	}
-
-	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, Product> pollingUpdateKafkaListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, Product> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(pollingUpdateConsumerFactory());
-		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
-
-		// Other configurations
-//		factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-//		factory.afterPropertiesSet();
-
-		return factory;
-	}
-
-	public ConsumerFactory<String, Product> pollingInsertConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
-
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.LATEST.name().toLowerCase());
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // default=500
-
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
-
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-				new JsonDeserializer<>(Product.class));
-	}
-
-	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, Product> pollingInsertKafkaListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, Product> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(pollingInsertConsumerFactory());
-		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
-
-		// Other configurations
-//		factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-//		factory.afterPropertiesSet();
-
-		return factory;
-	}
-
-	public ConsumerFactory<String, Product> pollingDeleteConsumerFactory() {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
-
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, OffsetResetStrategy.LATEST.name().toLowerCase());
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // default=500
-
-		props.put(JsonDeserializer.TRUSTED_PACKAGES, "hu.exercise.spring.kafka.input");
-
-		return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-				new JsonDeserializer<>(Product.class));
-	}
-
-	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, Product> pollingDeleteKafkaListenerContainerFactory() {
-		ConcurrentKafkaListenerContainerFactory<String, Product> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(pollingDeleteConsumerFactory());
-		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
-
-		// Other configurations
-//		factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-//		factory.afterPropertiesSet();
-
-		return factory;
-	}
-
 	@Bean
 	public DefaultErrorHandler errorHandler() {
 		BackOff fixedBackOff = new FixedBackOff(interval, maxAttempts);
@@ -191,7 +98,7 @@ public class KafkaConsumerConfig {
 			// TODO
 			LOGGER.error(String.format("consumed record %s because this exception was thrown",
 					consumerRecord.toString(), e.getClass().getName()), e);
-			shutdownController.shutdownContextWithError(9);
+			shutdownController.shutdownContextWithError(9, e);
 		}, fixedBackOff);
 		// Commented because of the test
 //		errorHandler.addRetryableExceptions(org.sqlite.SQLiteException.class, org.springframework.orm.jpa.JpaSystemException.class);

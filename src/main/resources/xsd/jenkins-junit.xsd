@@ -83,6 +83,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="testsuite" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="testcase" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="system-out" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="system-err" minOccurs="0" maxOccurs="1"/>

@@ -13,28 +13,21 @@ import org.springframework.stereotype.Service;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.ShutdownController;
 import hu.exercise.spring.kafka.cogroup.Flushed;
+import hu.exercise.spring.kafka.cogroup.Report;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.ProductEventMessageProducer;
 import hu.exercise.spring.kafka.service.ProductService;
 
 @Service
-public class ProductMessageListener {
+public class FlushedMessageListener {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProductMessageListener.class);
-
-//	@Autowired
-//	public NewTopic mergedProductEvents;
-
-//	private CountDownLatch productPairLatch = new CountDownLatch(1);
-
-	@Autowired
-	private ProductService productService;
+	private static final Logger LOGGER = LoggerFactory.getLogger(FlushedMessageListener.class);
 
 	@Autowired
 	public KafkaEnvironment environment;
 
 	@Autowired
-	public NewTopic productRollup;
+	public NewTopic flushed;
 
 	@Autowired
 	public ProductEventMessageProducer productEventMessageProducer;
@@ -43,16 +36,27 @@ public class ProductMessageListener {
 	ShutdownController shutdownController;
 	
 	@Autowired
-	DBProductMessageProducer dbProductMessageProducer;
+	public Report report;
 
 	@KafkaListener(topics = "#{__listener.topic}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
 	public void productPairListener(Flushed flushed) {
 		LOGGER.warn("Received flushed message: " + flushed);
+		
+		
+		report.setCountInsert(report.getCountInsert()+flushed.getCountInsert());
+		report.setCountUpdate(report.getCountUpdate()+flushed.getCountUpdate());
+		report.setCountDelete(report.getCountDelete()+flushed.getCountDelete());
+		report.setCountError(report.getCountError()+flushed.getCountError());
+		
 
-		int countEvent = productEventMessageProducer.getCounter();
-		int countProcessed = flushed.getCountProcessed();
-		LOGGER.warn("countEvent: " + countEvent);
-		BigDecimal temp = BigDecimal.valueOf(countProcessed).divide(BigDecimal.valueOf(countEvent), 2, RoundingMode.CEILING);
+		int sumEvent = productEventMessageProducer.getCounter();
+		int sumProcessed = flushed.getSumProcessed();
+		LOGGER.warn("sumEvent    : " + sumEvent);
+		LOGGER.warn("sumProcessed: " + sumProcessed);
+		report.setSumEvent(sumEvent);
+		report.setSumProcessed(sumProcessed);
+		
+		BigDecimal temp = BigDecimal.valueOf(sumProcessed).divide(BigDecimal.valueOf(sumEvent), 2, RoundingMode.CEILING);
 		long i = temp.multiply(BigDecimal.valueOf(100)).intValue();
 		
 		LOGGER.warn("i: " + i);
@@ -63,14 +67,14 @@ public class ProductMessageListener {
 		}
 		System.out.print("[" + String.format("%-100s", sb.toString()) + "] " + i + "%\r");
 
-		if (countProcessed >= countEvent) {
+		if (sumProcessed >= sumEvent) {
 			shutdownController.shutdownContext();
 		}
 
 	}
 
 	public String getTopic() {
-		return productRollup.name();
+		return flushed.name();
 	}
 
 }

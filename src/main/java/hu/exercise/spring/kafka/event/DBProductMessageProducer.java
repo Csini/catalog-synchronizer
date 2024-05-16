@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import hu.exercise.spring.kafka.KafkaApplication;
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.cogroup.Report;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
 import jakarta.annotation.PostConstruct;
@@ -50,6 +51,9 @@ public class DBProductMessageProducer {
 	private ProductEventMessageProducer productEventMessageProducer;
 	
 	private int counter;
+	
+	@Autowired
+	public Report report;
 
 //	@Transactional(readOnly = true)
 //	@Transactional
@@ -63,6 +67,8 @@ public class DBProductMessageProducer {
 					.forEach(p -> {
 
 						counter++;
+						report.setCountReadedFromDB(report.getCountReadedFromDB()+1);
+						
 //				if (!String.valueOf(environment.getRequestid()).equals(p.getRun().getRequestid())) {
 						LOGGER.info("sending product to readedFromDb: " + p);
 						ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
@@ -76,6 +82,7 @@ public class DBProductMessageProducer {
 			LOGGER.error("", e);
 			throw e;
 		}
+		report.setCountReadedFromDB(counter);
 		LOGGER.warn("sending events to readedFromDb: " + counter);
 	}
 
@@ -85,7 +92,7 @@ public class DBProductMessageProducer {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
 		try (InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db")) {
-			Path destination = Paths.get("bkp/productsdb-" + LocalDateTime.now().format(formatter) + ".bak");
+			Path destination = Paths.get("bkp/productsdb-" + environment.getRequestid() + ".bak");
 
 			Files.createDirectories(destination.getParent());
 			Files.copy(origin, destination);

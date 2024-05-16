@@ -21,8 +21,8 @@ public class KafkaApplication {
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaApplication.class);
 
 	public static void main(String[] args) throws Exception {
-		
-		SpringApplication.run(KafkaApplication.class, args);
+		try {
+			SpringApplication.run(KafkaApplication.class, args);
 
 //		KafkaStreams streams = null;
 //		try (ConfigurableApplicationContext context = SpringApplication.run(KafkaApplication.class, args);) {
@@ -87,6 +87,11 @@ public class KafkaApplication {
 ////				streams.close();
 ////			}
 //		}
+
+		} catch (Throwable e) {
+			LOGGER.error("KafkaApplication", e);
+			throw e;
+		}
 	}
 
 //	public static Properties loadEnvProperties() throws IOException {

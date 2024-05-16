@@ -25,9 +25,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
 import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
+import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
-import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
@@ -42,17 +42,11 @@ public class KafkaStreamsConfig {
 	@Value(value = "${spring.kafka.bootstrap-servers}")
 	private String bootstrapAddress;
 
-//    @Value("${kafka.topics.iot}")
-//    private String iotTopicName;
-
+	@Value(value = "${productPair.store.name}")
+	private String productPairStoreName;
+	
 	@Autowired
-	public NewTopic productRollup;
-
-	@Autowired
-	public NewTopic readedFromDb;
-
-	@Autowired
-	public NewTopic validProduct;
+	public NewTopic flushed;
 
 	@Autowired
 	public NewTopic productTopic;
@@ -114,10 +108,6 @@ public class KafkaStreamsConfig {
 //	@Bean
 //	public KStream<String, ProductRollup> productRollupStream(StreamsBuilder builder) {
 	public KStream<String, Flushed> productRollupStream() {
-		final String readedFromDbTopic = readedFromDb.name();
-		final String validProductTopic = validProduct.name();
-
-		final String totalResultOutputTopic = productRollup.name();
 
 		final Serde<String> stringSerde = Serdes.String();
 //		final Serde<Windowed<String>> windowedSerde = WindowedSerdes.sessionWindowedSerdeFrom(String.class);
@@ -199,7 +189,7 @@ public class KafkaStreamsConfig {
 //		KStream<Windowed<String>, ProductRollup> lastStream = last.toStream();
 //
 
-		String stateStoreName = "aggStore" + "-" + environment.getRequestid().toString();
+		String stateStoreName = productPairStoreName + "-" + environment.getRequestid().toString();
 
 		StoreBuilder<KeyValueStore<String, ProductPair>> keyValueStoreBuilder = Stores
 				.keyValueStoreBuilder(Stores.persistentKeyValueStore(stateStoreName), stringSerde, productPairSerde);
@@ -214,7 +204,7 @@ public class KafkaStreamsConfig {
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),
 //				Consumed.with(stringSerde, productRollupSerde));
 
-		lastStream.to(totalResultOutputTopic, Produced.with(stringSerde, flushedSerde()));
+		lastStream.to(flushed.name(), Produced.with(stringSerde, flushedSerde()));
 
 		Serde<Product> productSerde = productSerde();
 

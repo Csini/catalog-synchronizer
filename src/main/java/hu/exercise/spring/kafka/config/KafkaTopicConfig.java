@@ -29,12 +29,12 @@ public class KafkaTopicConfig {
 	@Value(value = "${invalidProduct.topic.name}")
 	private String invalidProduct;
 
-	@Value(value = "${productRollup.topic.name}")
-	private String productRollup;
-	
+	@Value(value = "${flushed.topic.name}")
+	private String flushed;
+
 	@Value(value = "${product.topic.name}")
 	private String productTopic;
-	
+
 	@Autowired
 	public KafkaEnvironment environment;
 
@@ -42,8 +42,10 @@ public class KafkaTopicConfig {
 	public KafkaAdmin kafkaAdmin() {
 		Map<String, Object> configs = new HashMap<>();
 		configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+		configs.put(AdminClientConfig.CLIENT_ID_CONFIG, environment.getRequestid().toString());
 		KafkaAdmin kafkaAdmin = new KafkaAdmin(configs);
-		kafkaAdmin.createOrModifyTopics(readedFromDb(), validProduct(), invalidProduct(), productRollup());
+		kafkaAdmin.createOrModifyTopics(readedFromDb(), validProduct(), invalidProduct(), flushed(),
+				productTopic(), runs());
 		return kafkaAdmin;
 	}
 
@@ -63,33 +65,18 @@ public class KafkaTopicConfig {
 	}
 
 	@Bean
-	public NewTopic productRollup() {
-		return new NewTopic(environment.getRequestid() + "-" + productRollup, 1, (short) 1);
+	public NewTopic flushed() {
+		return new NewTopic(flushed, 1, (short) 1);
 	}
-	
+
 	@Bean
 	public NewTopic productTopic() {
-		return new NewTopic(environment.getRequestid() + "-" + productTopic, 1, (short) 1);
+		return new NewTopic(productTopic, 1, (short) 1);
 	}
-	
+
 	@Bean
 	public NewTopic runs() {
 		return new NewTopic("runs", 1, (short) 1);
-	}
-	
-	@Bean
-	public NewTopic productUpdate() {
-		return new NewTopic(environment.getRequestid() + "-" + "product-" + Action.UPDATE, 1, (short) 1);
-	}
-	
-	@Bean
-	public NewTopic productInsert() {
-		return new NewTopic(environment.getRequestid() + "-" + "product-" + Action.INSERT, 1, (short) 1);
-	}
-	
-	@Bean
-	public NewTopic productDelete() {
-		return new NewTopic(environment.getRequestid() + "-" + "product-" + Action.DELETE, 1, (short) 1);
 	}
 
 }

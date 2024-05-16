@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.KafkaUtils;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.event.Source;
 
@@ -67,7 +68,6 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		}
 
 		processCounter++;
-
 //		LOGGER.info("processCounter: " + processCounter);
 
 		ProductPair oldValue = store.get(rec.key());
@@ -123,11 +123,12 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		}
 	}
 
+	@Deprecated
 	// batchSize = 150, processCounter not working!
 	private void flushStoreBatched(int batchSize) {
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
-			Stream<KeyValue<String, ProductPair>> stream = getStreamFromIterator(it);
+			Stream<KeyValue<String, ProductPair>> stream = KafkaUtils.getStreamFromIterator(it);
 			partitionStream(stream, batchSize).forEach(nextList -> {
 				AtomicInteger counter = new AtomicInteger();
 				ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), flushCounter,
@@ -147,17 +148,6 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 			});
 
 		}
-	}
-
-	// https://www.geeksforgeeks.org/convert-an-iterator-to-stream-in-java/
-	// Function to get the Stream
-	public static <T> Stream<T> getStreamFromIterator(Iterator<T> iterator) {
-
-		// Convert the iterator to Spliterator
-		Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, 0);
-
-		// Get a Sequential Stream from spliterator
-		return StreamSupport.stream(spliterator, false);
 	}
 
 	static <T> List<List<T>> partitionStream(Stream<T> source, int batchSize) {

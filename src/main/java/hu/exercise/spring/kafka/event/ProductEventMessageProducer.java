@@ -21,9 +21,9 @@ public class ProductEventMessageProducer {
 	private int counter;
 
 	public void sendMessage(ProductEvent event) {
+		counter++;
 		productTopicKafkaTemplate.send(productTopic.name(), event.getRequestid().toString() + "." + event.getId(),
 				event);
-		counter++;
 	}
 
 	public int getCounter() {
