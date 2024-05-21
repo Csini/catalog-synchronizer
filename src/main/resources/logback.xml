@@ -26,7 +26,7 @@
      <logger name="org.springframework.transaction.interceptor" level="warn" />
      
      
-     <logger name="net.ttddyy.dsproxy.listener" level="warn" />
+     <logger name="net.ttddyy.dsproxy.listener" level="all" />
      
      <logger name="org.apache.kafka.streams.KafkaStreams" level="debug" />
    

@@ -32,38 +32,4 @@ public class JAXBConfig {
 		return jaxbMarshaller;
 	}
 
-	@Bean
-	public ObjectFactory objectFactory() {
-
-		ObjectFactory objectFactory = new ObjectFactory();
-		return objectFactory;
-	}
-
-	@Bean
-	public Testsuites testsuites() {
-		ObjectFactory objectFactory = objectFactory();
-		Testsuites testsuites = objectFactory.createTestsuites();
-
-		Testsuite testsuite = objectFactory.createTestsuite();
-		testsuites.getTestsuite().add(testsuite);
-		testsuite.setName("REQUEST: " + environment.getRequestid().toString());
-		
-		Properties testsuiteProperties = objectFactory.createProperties();
-		testsuite.setProperties(testsuiteProperties);
-
-		Property property = objectFactory.createProperty();
-		testsuiteProperties.getProperty().add(property);
-		property.setName("filename");
-		property.setValue(environment.getFilename());
-		
-		return testsuites;
-	}
-
-	@Bean
-	public Report report() {
-		Report report = new Report();
-		report.setRequestid(environment.getRequestid().toString());
-		return report;
-	}
-
 }

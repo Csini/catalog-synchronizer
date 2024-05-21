@@ -31,9 +31,6 @@ public class ShutdownController implements ApplicationContextAware {
 	@Autowired
 	private PlatformTransactionManager txManager;
 	
-	@Autowired
-	Report report;
-
 	public void shutdownContext() {
 
 		LOGGER.warn("Shutting down Context...");
@@ -59,7 +56,7 @@ public class ShutdownController implements ApplicationContextAware {
 //			// we can't do anything
 //			LOGGER.error("createErrorReport error", ex);
 //		}
-		
+		Report report = environment.getReport();
 		report.setReportedThrowable(e);
 		report.setErrorCode(errorCode);
 //		TransactionStatus transactionStatus = TransactionAspectSupport.currentTransactionStatus();

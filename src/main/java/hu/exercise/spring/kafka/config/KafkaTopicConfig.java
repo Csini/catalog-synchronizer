@@ -34,6 +34,9 @@ public class KafkaTopicConfig {
 
 	@Value(value = "${product.topic.name}")
 	private String productTopic;
+	
+	@Value(value = "${dbevent.topic.name}")
+	private String dbEventTopic;
 
 	@Autowired
 	public KafkaEnvironment environment;
@@ -45,7 +48,7 @@ public class KafkaTopicConfig {
 		configs.put(AdminClientConfig.CLIENT_ID_CONFIG, environment.getRequestid().toString());
 		KafkaAdmin kafkaAdmin = new KafkaAdmin(configs);
 		kafkaAdmin.createOrModifyTopics(readedFromDb(), validProduct(), invalidProduct(), flushed(),
-				productTopic(), runs());
+				productTopic(), dbEventTopic(),runs());
 		return kafkaAdmin;
 	}
 
@@ -72,6 +75,11 @@ public class KafkaTopicConfig {
 	@Bean
 	public NewTopic productTopic() {
 		return new NewTopic(productTopic, 1, (short) 1);
+	}
+	
+	@Bean
+	public NewTopic dbEventTopic() {
+		return new NewTopic(dbEventTopic, 1, (short) 1);
 	}
 
 	@Bean

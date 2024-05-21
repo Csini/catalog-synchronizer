@@ -11,22 +11,19 @@ import org.springframework.stereotype.Service;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 
 @Service
-public class ProductEventMessageProducer {
-	
-	@Autowired
-	public NewTopic productTopic;
+public class DBEventMessageProducer {
 
 	@Autowired
-	private KafkaTemplate<String, ProductEvent> productTopicKafkaTemplate;
+	public NewTopic dbEventTopic;
+
+	@Autowired
+	private KafkaTemplate<String, DBEvent> dbEventTopicKafkaTemplate;
 
 	@Autowired
 	public KafkaEnvironment environment;
 
-	protected CompletableFuture<SendResult<String,ProductEvent>> sendProductMessage(ProductEvent event) {
-
-		environment.getReport().setSumEvent(environment.getReport().getSumEvent() + 1);
-		return productTopicKafkaTemplate.send(productTopic.name(), event.getRequestid().toString() /* + "." + event.getId() */,
+	public CompletableFuture<SendResult<String, DBEvent>> sendMessage(DBEvent event) {
+		return dbEventTopicKafkaTemplate.send(dbEventTopic.name(), event.getRequestid().toString() /* + "." + event.getId() */,
 				event);
 	}
-
 }

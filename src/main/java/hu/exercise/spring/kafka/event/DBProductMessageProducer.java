@@ -5,30 +5,26 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import hu.exercise.spring.kafka.KafkaApplication;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
-import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 
 @Service
-public class DBProductMessageProducer {
+public class DBProductMessageProducer extends ProductEventMessageProducer{
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DBProductMessageProducer.class);
 
@@ -44,46 +40,54 @@ public class DBProductMessageProducer {
 	@Autowired
 	public KafkaEnvironment environment;
 
-//	@PersistenceContext
-//	public EntityManager entityManager;
-
-	@Autowired
-	private ProductEventMessageProducer productEventMessageProducer;
-	
-	private int counter;
-	
-	@Autowired
-	public Report report;
-
-//	@Transactional(readOnly = true)
-//	@Transactional
 	public void sendMessages() throws IOException {
 		LOGGER.info("sendMessages");
+		Report report = environment.getReport();
 		try {
 			backupDB();
 
+			
 			productService.getAllProducts(String.valueOf(environment.getRequestid()))
-					// .peek(entityManager::detach)
 					.forEach(p -> {
 
-						counter++;
-						report.setCountReadedFromDB(report.getCountReadedFromDB()+1);
-						
-//				if (!String.valueOf(environment.getRequestid()).equals(p.getRun().getRequestid())) {
+						report.setCountReadedFromDB(report.getCountReadedFromDB() + 1);
+						report.setSumReaded(report.getSumReaded() + 1);
+
 						LOGGER.info("sending product to readedFromDb: " + p);
 						ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
-						readedFromDbKafkaTemplate.send(readedFromDb.name(),
-								environment.getRequestid() + "." + p.getId(), event);
+						sendEvent(p, event);
 
-						productEventMessageProducer.sendMessage(event);
-//				}
+//						try {
+							CompletableFuture<SendResult<String, ProductEvent>> sendProductMessage = super.sendProductMessage(event);
+//							SendResult<String, ProductEvent> sendResult = sendProductMessage.get(10, TimeUnit.SECONDS);
+//					        handleSuccess(data);
+//					    }
+//					    catch (ExecutionException e) {
+//					        handleFailure(data, record, e.getCause());
+//					    }
+//					    catch (TimeoutException | InterruptedException e) {
+//					        handleFailure(data, record, e);
+//					    }
+//						
+//						sendProductMessage.whenComplete((result, ex) -> {
+//					        if (ex == null) {
+//					            handleSuccess(data);
+//					        }
+//					        else {
+//					            handleFailure(data, record, ex);
+//					        }
+//					    });
 					});
 		} catch (IOException e) {
 			LOGGER.error("", e);
 			throw e;
+		} finally {
+			LOGGER.warn("sending events to readedFromDb: " + report.getCountReadedFromDB());
 		}
-		report.setCountReadedFromDB(counter);
-		LOGGER.warn("sending events to readedFromDb: " + counter);
+	}
+
+	private void sendEvent(Product p, ProductEvent event) {
+		readedFromDbKafkaTemplate.send(readedFromDb.name(), environment.getRequestid() + "." + p.getId(), event);
 	}
 
 	private void backupDB() throws IOException {
@@ -101,10 +105,6 @@ public class DBProductMessageProducer {
 		}
 
 		// INSERT INTO new_db.table_name SELECT * FROM old_db.table_name;
-	}
-	
-	public int getCounter() {
-		return counter;
 	}
 
 }

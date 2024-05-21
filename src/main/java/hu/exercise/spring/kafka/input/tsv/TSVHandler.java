@@ -34,9 +34,6 @@ public class TSVHandler {
 	@Autowired
 	public KafkaEnvironment environment;
 
-	@Autowired
-	public Report report;
-
 	@PostConstruct
 	private void postConstruct() {
 		TsvParserSettings settings = new TsvParserSettings();
@@ -65,7 +62,9 @@ public class TSVHandler {
 			// header row and it is after the last row
 			line -= 2;
 		}
+		Report report = environment.getReport();
 		report.setCountReadedFromTsv(line);
+		report.setSumReaded(report.getSumReaded() + line);
 		LOGGER.warn("readed valid from TSV: " + customBeanListProcessor.getCounter());
 	}
 }

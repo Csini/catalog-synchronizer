@@ -16,6 +16,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.event.DBEvent;
 import hu.exercise.spring.kafka.event.ProductErrorEvent;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.input.*;
@@ -35,7 +36,7 @@ public class KafkaProducerConfig {
 		configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
 		configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 		configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-//		configProps.put(ProducerConfig.CLIENT_ID_CONFIG, environment.getRequestid().toString());
+		configProps.put(ProducerConfig.CLIENT_ID_CONFIG, environment.getRequestid().toString());
 		return new DefaultKafkaProducerFactory<>(configProps);
 	}
 
@@ -103,5 +104,20 @@ public class KafkaProducerConfig {
 	@Bean
 	public KafkaTemplate<String, ProductEvent> productTopicKafkaTemplate() {
 		return new KafkaTemplate<>(productTopicKafkaFactory());
+	}
+	
+	@Bean
+	public ProducerFactory<String, DBEvent> dbEventTopicKafkaFactory() {
+		Map<String, Object> configProps = new HashMap<>();
+		configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
+		configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+//		configProps.put(ProducerConfig.CLIENT_ID_CONFIG, environment.getRequestid().toString());
+		return new DefaultKafkaProducerFactory<>(configProps);
+	}
+
+	@Bean
+	public KafkaTemplate<String, DBEvent> dbEventTopicKafkaTemplate() {
+		return new KafkaTemplate<>(dbEventTopicKafkaFactory());
 	}
 }

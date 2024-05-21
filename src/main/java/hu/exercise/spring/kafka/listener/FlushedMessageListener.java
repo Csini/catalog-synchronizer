@@ -35,25 +35,22 @@ public class FlushedMessageListener {
 	@Autowired
 	ShutdownController shutdownController;
 	
-	@Autowired
-	public Report report;
-
 	@KafkaListener(topics = "#{__listener.topic}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
 	public void productPairListener(Flushed flushed) {
 		LOGGER.warn("Received flushed message: " + flushed);
 		
-		
+		Report report = environment.getReport();
 		report.setCountInsert(report.getCountInsert()+flushed.getCountInsert());
 		report.setCountUpdate(report.getCountUpdate()+flushed.getCountUpdate());
 		report.setCountDelete(report.getCountDelete()+flushed.getCountDelete());
 		report.setCountError(report.getCountError()+flushed.getCountError());
 		
 
-		int sumEvent = productEventMessageProducer.getCounter();
+//		int sumEvent = productEventMessageProducer.getCounter();
+		int sumEvent = report.getSumEvent();
 		int sumProcessed = flushed.getSumProcessed();
 		LOGGER.warn("sumEvent    : " + sumEvent);
 		LOGGER.warn("sumProcessed: " + sumProcessed);
-		report.setSumEvent(sumEvent);
 		report.setSumProcessed(sumProcessed);
 		
 		BigDecimal temp = BigDecimal.valueOf(sumProcessed).divide(BigDecimal.valueOf(sumEvent), 2, RoundingMode.CEILING);
@@ -65,9 +62,9 @@ public class FlushedMessageListener {
 		for (int j = 0; j < i; j++) {
 			sb.append("#");
 		}
-		System.out.print("[" + String.format("%-100s", sb.toString()) + "] " + i + "%\r");
+		System.out.print("[" + String.format("%-100s", sb.toString()) + "] " + i + "% ("+environment.getRequestid()+")" +"\r");
 
-		if (sumProcessed >= sumEvent) {
+		if (i >= 100) {
 			shutdownController.shutdownContext();
 		}
 

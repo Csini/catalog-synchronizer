@@ -31,17 +31,19 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 	private KafkaEnvironment environment;
 
-	private int processCounter = 0;
+	private int flushCounter = 0;
 
 	private PlatformTransactionManager txManager;
 
 	private TransactionStatus status;
 
 	private Map<String, Product> readedFromDbMap = new HashMap<String, Product>();
+	private int readed;
 
-	public CustomDBWriter(KafkaEnvironment environment, ProductService productService,
+	public CustomDBWriter(int readed, KafkaEnvironment environment, ProductService productService,
 			PlatformTransactionManager txManager) {
 		super();
+		this.readed = readed;
 		this.environment = environment;
 		this.productService = productService;
 		this.txManager = txManager;
@@ -67,7 +69,7 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 			LOGGER.debug("processing: " + rec.value());
 		}
 
-		processCounter++;
+		flushCounter++;
 
 //		LOGGER.info("processCounter: " + processCounter);
 
@@ -90,12 +92,12 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 		}
 		if (groupedProductRollups.containsKey(Action.UPDATE)) {
 			List<Product> productList = groupedProductRollups.get(Action.UPDATE);
-			productService.bulkSaveProducts(productList);
+			productService.bulkUpdateProducts(productList);
 			flushed.setCountUpdate(productList.size());
 		}
 		if (groupedProductRollups.containsKey(Action.INSERT)) {
 			List<Product> productList = groupedProductRollups.get(Action.INSERT);
-			productService.bulkSaveProducts(productList);
+			productService.bulkInsertProducts(productList);
 			flushed.setCountInsert(productList.size());
 		}
 
@@ -105,9 +107,13 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 			flushed.setCountError(productList.size());
 		}
 
-		LOGGER.warn("flushed: " + counter);
+		LOGGER.warn("processed: " + counter);
 
+		environment.getReport().setSumDBEvents(environment.getReport().getSumDBEvents()+counter.intValue());		
 		// TODO
+//		if(readed<=flushed.getSumProcessed()) {
+//			this.txManager.commit(this.status);
+//		}
 
 		context.forward(
 				new Record<String, Flushed>(environment.getRequestid().toString(), flushed, new Date().getTime()));
@@ -150,7 +156,7 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 		// TODO clear store ?
 //		store.
 		txManager.commit(this.status);
-		LOGGER.info("processCounter: " + processCounter);
+		LOGGER.info("flushCounter: " + flushCounter);
 	}
 
 }

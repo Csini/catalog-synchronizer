@@ -44,9 +44,6 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	@Autowired
 	public KafkaEnvironment environment;
 	
-	@Autowired
-	private ProductEventMessageProducer productEventMessageProducer;
-	
 	private int counter = 0;
 
 	public CustomBeanListProcessor() {
@@ -85,8 +82,6 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 			// send to valid topic
 			ProductEvent productEvent = new ProductEvent(bean.getId(), environment.getRequestid(), Source.TSV, bean);
 			validMessageProducer.sendEvent(productEvent);
-			
-			productEventMessageProducer.sendMessage(productEvent);
 			
 		} else {
 			LOGGER.error("at " + bean.getId(), violations);

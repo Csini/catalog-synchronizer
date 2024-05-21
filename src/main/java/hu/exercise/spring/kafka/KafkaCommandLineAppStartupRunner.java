@@ -78,7 +78,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilename("file3.txt");
+			run.setFilename("file1.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
@@ -114,7 +114,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			streamsConfig.productRollupStream();
 
-			factory.setCleanupConfig(new CleanupConfig(true, true));
+			factory.setCleanupConfig(new CleanupConfig(true, false));
 			factory.setStreamsUncaughtExceptionHandler(ex -> {
 				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
 //			return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD;
@@ -123,7 +123,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			});
 			factory.start();
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LOGGER.error("commandline", e);
 			shutdownController.shutdownContextWithError(9, e);
 		}

@@ -45,19 +45,26 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 	private int flushCounter = 0;
 
+	private int foundCounter = 0;
+	
 	public KafkaEnvironment environment;
+	
+	private int aggregateWindowInSec;
 
-	public CustomProductPairAggregator(String stateStoreName, KafkaEnvironment environment) {
+	public CustomProductPairAggregator(int aggregateWindowInSec, String stateStoreName, KafkaEnvironment environment) {
 		super();
 		this.stateStoreName = stateStoreName;
 		this.environment = environment;
+		this.aggregateWindowInSec = aggregateWindowInSec;
 	}
 
 	@Override
 	public void init(final ProcessorContext<String, ProductRollup> context) {
 		this.context = context;
-		context.schedule(Duration.ofSeconds(60), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
-		context.schedule(Duration.ofSeconds(10), PunctuationType.STREAM_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(240), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(this.aggregateWindowInSec), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
 		store = context.getStateStore(stateStoreName);
 	}
 
@@ -70,13 +77,17 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		processCounter++;
 //		LOGGER.info("processCounter: " + processCounter);
 
-		ProductPair oldValue = store.get(rec.key());
+		String id = rec.value().getId();
+		ProductPair oldValue = store.get(id);
+//		LOGGER.warn("found(" + id + "): " + oldValue);
 
 		if (oldValue == null) {
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug("NEW!!!!");
 			}
-			oldValue = new ProductPair(rec.value().getId(), rec.value().getRequestid().toString());
+			oldValue = new ProductPair(id, rec.value().getRequestid().toString());
+		}else {
+			foundCounter++;
 		}
 
 		if (LOGGER.isDebugEnabled()) {
@@ -97,15 +108,26 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //			oldvalue.setTimestamp(rec.timestamp());
 //			store.put(key, value);
 //		}
-
-		store.put(rec.key(), oldValue);
+//		LOGGER.warn("putting(" + id + "): " + oldValue);
+		store.put(id, oldValue);
+		
+		if(processCounter>=environment.getReport().getSumReaded())
+		{
+			flushStore();
+		}
 	}
-	
+
 	private void flushStore() {
+		LOGGER.warn("flushStore: " + store.approximateNumEntries());
+		if(flushCounter==0 && store.approximateNumEntries()==1) {
+			LOGGER.warn("don't do anything yet, waiting " + aggregateWindowInSec+ " seconds...");
+			return;
+		}
 		AtomicInteger counter = new AtomicInteger();
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
-			ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), counter.get(), processCounter);
+			ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), counter.get(),
+					processCounter);
 			while (it.hasNext()) {
 				KeyValue<String, ProductPair> next = it.next();
 				counter.incrementAndGet();
@@ -205,6 +227,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		// TODO clear store ?
 //		store.
 		LOGGER.info("processCounter: " + processCounter);
+		
+		LOGGER.warn("foundCounter: " + foundCounter);
 	}
 
 }
