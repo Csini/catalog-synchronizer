@@ -1,6 +1,11 @@
 package hu.exercise.spring.kafka.cogroup;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import hu.exercise.spring.kafka.input.Run;
 import hu.exercise.spring.kafka.output.Error;
@@ -13,6 +18,8 @@ import lombok.Data;
 @Data
 //@NoArgsConstructor
 public class Report {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(Report.class);
 
 	private Run run;
 
@@ -35,7 +42,7 @@ public class Report {
 	private int sumEvent;
 
 	private long sumReaded;
-	
+
 	private long sumDBEvents;
 
 	private int errorCode;
@@ -168,6 +175,28 @@ public class Report {
 		}
 
 		return testsuites;
+	}
+
+	public long printProgressbar() {
+		// int sumEvent = productEventMessageProducer.getCounter();
+		int sumEvent = getSumEvent();
+		int sumProcessed = getSumProcessed();
+		LOGGER.warn("sumEvent    : " + sumEvent);
+		LOGGER.warn("sumProcessed: " + sumProcessed);
+
+		BigDecimal temp = BigDecimal.valueOf(sumProcessed).divide(BigDecimal.valueOf(sumEvent), 2,
+				RoundingMode.CEILING);
+		long i = temp.multiply(BigDecimal.valueOf(100)).intValue();
+
+		LOGGER.warn("i: " + i);
+
+		StringBuilder sb = new StringBuilder();
+		for (int j = 0; j < i; j++) {
+			sb.append("#");
+		}
+		System.out.print(
+				"[" + String.format("%-100s", sb.toString()) + "] " + i + "% (" + run.getRequestid() + ")" + "\r");
+		return i;
 	}
 
 }

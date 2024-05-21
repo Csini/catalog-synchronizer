@@ -48,25 +48,31 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public Iterable<Product> bulkInsertProducts(Iterable<Product> productList) {
+	public Iterable<Product> bulkInsertProducts(Iterable<Product> productList, int productListSize ) {
 		
 		Iterable<Product> saveAll = repository.saveAll(productList);
 		
 		saveAll.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.INSERT)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		environment.getReport().printProgressbar();
 		return saveAll;
 	}
 
 	@Override
-	public Iterable<Product> bulkUpdateProducts(Iterable<Product> productList) {
+	public Iterable<Product> bulkUpdateProducts(Iterable<Product> productList, int productListSize ) {
 		Iterable<Product> saveAll = repository.saveAll(productList);
 		saveAll.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.UPDATE)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		environment.getReport().printProgressbar();
 		return saveAll;
 	}
 
 	@Override
-	public void bulkDeleteProducts(Iterable<Product> productList) {
-		productList.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.DELETE)));
+	public void bulkDeleteProducts(Iterable<Product> productList, int productListSize ) {
 		repository.deleteAll(productList);
+		productList.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.DELETE)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		environment.getReport().printProgressbar();
 	}
 
 }

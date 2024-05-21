@@ -24,7 +24,7 @@ public class ProductEventMessageProducer {
 
 	protected CompletableFuture<SendResult<String,ProductEvent>> sendProductMessage(ProductEvent event) {
 
-		environment.getReport().setSumEvent(environment.getReport().getSumEvent() + 1);
+//		environment.getReport().setSumEvent(environment.getReport().getSumEvent() + 1);
 		return productTopicKafkaTemplate.send(productTopic.name(), event.getRequestid().toString() /* + "." + event.getId() */,
 				event);
 	}

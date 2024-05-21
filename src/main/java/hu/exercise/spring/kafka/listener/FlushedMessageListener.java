@@ -44,25 +44,10 @@ public class FlushedMessageListener {
 		report.setCountUpdate(report.getCountUpdate()+flushed.getCountUpdate());
 		report.setCountDelete(report.getCountDelete()+flushed.getCountDelete());
 		report.setCountError(report.getCountError()+flushed.getCountError());
+//		report.setSumProcessed(flushed.getSumProcessed());
 		
 
-//		int sumEvent = productEventMessageProducer.getCounter();
-		int sumEvent = report.getSumEvent();
-		int sumProcessed = flushed.getSumProcessed();
-		LOGGER.warn("sumEvent    : " + sumEvent);
-		LOGGER.warn("sumProcessed: " + sumProcessed);
-		report.setSumProcessed(sumProcessed);
-		
-		BigDecimal temp = BigDecimal.valueOf(sumProcessed).divide(BigDecimal.valueOf(sumEvent), 2, RoundingMode.CEILING);
-		long i = temp.multiply(BigDecimal.valueOf(100)).intValue();
-		
-		LOGGER.warn("i: " + i);
-
-		StringBuilder sb = new StringBuilder();
-		for (int j = 0; j < i; j++) {
-			sb.append("#");
-		}
-		System.out.print("[" + String.format("%-100s", sb.toString()) + "] " + i + "% ("+environment.getRequestid()+")" +"\r");
+		long i = report.printProgressbar();
 
 		if (i >= 100) {
 			shutdownController.shutdownContext();

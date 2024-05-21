@@ -48,6 +48,9 @@ public class KafkaStreamsConfig {
 	
 	@Value(value = "${aggregateWindowInSec}")
 	private int aggregateWindowInSec;
+
+	@Value(value = "${flushSize}")
+	private int flushSize;
 	
 	@Autowired
 	public NewTopic flushed;
@@ -203,7 +206,7 @@ public class KafkaStreamsConfig {
 				.stream(productTopic.name(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().toString().equals(key))
 //				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
-				.process(() -> new CustomProductPairAggregator(aggregateWindowInSec,stateStoreName, environment), stateStoreName)
+				.process(() -> new CustomProductPairAggregator(aggregateWindowInSec,flushSize, stateStoreName, environment), stateStoreName)
 				.process(() -> new CustomDBWriter(environment.getReport().getSumEvent(),environment, productService, txManager));
 
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),

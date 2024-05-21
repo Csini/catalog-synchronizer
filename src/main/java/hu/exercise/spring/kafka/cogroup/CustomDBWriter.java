@@ -87,17 +87,17 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 		if (groupedProductRollups.containsKey(Action.DELETE)) {
 //				groupedProductRollups.get(Action.DELETE).forEach(p -> productService.deleteProduct(p.getId()));
 			List<Product> productList = groupedProductRollups.get(Action.DELETE);
-			productService.bulkDeleteProducts(productList);
+			productService.bulkDeleteProducts(productList, productList.size());
 			flushed.setCountDelete(productList.size());
 		}
 		if (groupedProductRollups.containsKey(Action.UPDATE)) {
 			List<Product> productList = groupedProductRollups.get(Action.UPDATE);
-			productService.bulkUpdateProducts(productList);
+			productService.bulkUpdateProducts(productList, productList.size());
 			flushed.setCountUpdate(productList.size());
 		}
 		if (groupedProductRollups.containsKey(Action.INSERT)) {
 			List<Product> productList = groupedProductRollups.get(Action.INSERT);
-			productService.bulkInsertProducts(productList);
+			productService.bulkInsertProducts(productList, productList.size());
 			flushed.setCountInsert(productList.size());
 		}
 
@@ -109,11 +109,11 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 		LOGGER.warn("processed: " + counter);
 
-		environment.getReport().setSumDBEvents(environment.getReport().getSumDBEvents()+counter.intValue());		
+		environment.getReport().setSumDBEvents(environment.getReport().getSumDBEvents() + counter.intValue());
 		// TODO
-//		if(readed<=flushed.getSumProcessed()) {
-//			this.txManager.commit(this.status);
-//		}
+		if (environment.getReport().getSumEvent() <= flushed.getSumProcessed()) {
+			this.txManager.commit(this.status);
+		}
 
 		context.forward(
 				new Record<String, Flushed>(environment.getRequestid().toString(), flushed, new Date().getTime()));
@@ -155,7 +155,7 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 	public void close() {
 		// TODO clear store ?
 //		store.
-		txManager.commit(this.status);
+//		txManager.commit(this.status);
 		LOGGER.info("flushCounter: " + flushCounter);
 	}
 

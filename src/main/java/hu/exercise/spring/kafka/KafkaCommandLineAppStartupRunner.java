@@ -78,7 +78,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilename("file1.txt");
+			run.setFilename("file3.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
@@ -131,7 +131,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 	@PreDestroy
 	public void onExit() throws IOException, JAXBException, URISyntaxException {
-		LOGGER.info("###STOP FROM THE LIFECYCLE###");
+		LOGGER.warn("Exiting...");
 		reportController.createReport();
 	}
 }
