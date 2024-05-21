@@ -140,6 +140,11 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 						}
 						readedFromDbMap.remove(productToSave.getId());
 						readedFromDb.merge(productToSave);
+
+						if (Action.UPDATE.equals(pair.getAction()) && !readedFromDb.isChange()) {
+							this.environment.getReport()
+									.setCountNoChange(this.environment.getReport().getCountNoChange() + 1);
+						}
 //				readedFromDb.setNew(false);)
 						return readedFromDb;
 					}

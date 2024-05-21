@@ -37,6 +37,8 @@ public class Report {
 	private int countReadedFromTsvValid;
 	private int countReadedFromTsvInvalid;
 
+	private int countNoChange;
+
 	private int sumProcessed;
 
 	private int sumEvent;
@@ -50,7 +52,7 @@ public class Report {
 	private double timeReadFromDb;
 
 	private double timeReadFromTsv;
-	
+
 	private double timerProcessing;
 
 	private int errorCode;
@@ -58,7 +60,7 @@ public class Report {
 	private Throwable reportedThrowable;
 
 	private Testsuites testsuites;
-	
+
 	private static final ObjectFactory OBJECTFACTORY = new ObjectFactory();
 
 	public Report(Run run) {
@@ -176,7 +178,7 @@ public class Report {
 			{
 				Testcase testcase = OBJECTFACTORY.createTestcase();
 				testsuite.getTestcase().add(testcase);
-				testcase.setName("NOCHANGE: 0");
+				testcase.setName("NOCHANGE: " + getCountNoChange());
 			}
 
 		}
@@ -197,8 +199,11 @@ public class Report {
 		LOGGER.warn("sumEvent    : " + sumEvent);
 		LOGGER.warn("sumProcessed: " + sumProcessed);
 
-		BigDecimal temp = BigDecimal.valueOf(sumProcessed).divide(BigDecimal.valueOf(sumEvent), 2,
-				RoundingMode.CEILING);
+		BigDecimal temp = BigDecimal.ZERO;
+
+		if (sumEvent > 0) {
+			temp = BigDecimal.valueOf(sumProcessed).divide(BigDecimal.valueOf(sumEvent), 2, RoundingMode.CEILING);
+		}
 		long i = temp.multiply(BigDecimal.valueOf(100)).intValue();
 
 		LOGGER.warn("i: " + i);

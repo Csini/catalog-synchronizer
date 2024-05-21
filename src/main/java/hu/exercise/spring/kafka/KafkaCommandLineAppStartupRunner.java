@@ -87,7 +87,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilename("file2.txt");
+			run.setFilename("file3.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
@@ -138,6 +138,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 				return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_APPLICATION;
 			});
 			factory.start();
+			environment.getReport().printProgressbar();
 
 		} catch (Throwable e) {
 			LOGGER.error("commandline", e);

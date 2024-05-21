@@ -195,11 +195,40 @@ public class Product implements Persistable<String> {
 
 			for (Field newField : newObject.getClass().getDeclaredFields()) {
 
+				if ("change".equals(field.getName())) {
+					continue;
+				}
+
+				if ("insert".equals(field.getName())) {
+					continue;
+				}
+
 				if (field.getName().equals(newField.getName())) {
 
 					try {
+						Object value = field.get(this);
+						Object newValue = newField.get(newObject);
+//						System.out.println("changed? "+ field.getName() + " " + value +" -> " + newValue);
 
-						field.set(this, newField.get(newObject) == null ? field.get(this) : newField.get(newObject));
+						if (value == null && newValue!=null) {
+
+							if (!"run".equals(field.getName()) && !"created".equals(field.getName())
+									&& !"updated".equals(field.getName())) {
+								this.change = true;
+							}
+						}
+						
+						if (value != null && !value.equals(newValue)) {
+
+							if (!"run".equals(field.getName()) && !"created".equals(field.getName())
+									&& !"updated".equals(field.getName())) {
+								this.change = true;
+							}
+						}
+
+						// field.set(this, newField.get(newObject) == null ? field.get(this) :
+						// newField.get(newObject));
+						field.set(this, newValue);
 
 					} catch (IllegalAccessException ignore) {
 						// Field update exception on final modifier and other cases.
@@ -208,6 +237,9 @@ public class Product implements Persistable<String> {
 			}
 		}
 	}
+
+	@Transient
+	private boolean change;
 
 	@Transient
 	private boolean insert;
