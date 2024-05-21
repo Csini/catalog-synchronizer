@@ -16,6 +16,9 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.stereotype.Component;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.RunMessageProducer;
@@ -60,10 +63,16 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 	@Autowired
 	KafkaReportController reportController;
 
+	@Autowired
+	MetricRegistry metrics;
+
+	Timer.Context contextAllRun;
+
 	@Override
 	public void run(String... args) {
 		LOGGER.info("args: " + args);
-
+		Timer timer = metrics.timer("contextAllRun");
+		contextAllRun = timer.time();
 		try {
 
 			// save metadata
@@ -88,19 +97,26 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			ExecutorService service = Executors.newFixedThreadPool(2);
 			Future<?> readFromDb = service.submit(() -> {
-				try {
+				Timer timerReadFromDB = metrics.timer("timerReadFromDB");
+				try (Timer.Context contextReadFromDB = timerReadFromDB.time();) {
 					dbProductMessageProducer.sendMessages();
+					environment.getReport().setTimeReadFromDb(contextReadFromDB.stop()/1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("db", e);
 					throw new RuntimeException(e);
+				} finally {
 				}
 			});
 			Future<?> readFromTsv = service.submit(() -> {
-				try {
+				Timer timerReadFromTsv = metrics.timer("timerReadFromTsv");
+				;
+				try (Timer.Context contextReadFromTsv = timerReadFromTsv.time();) {
 					tsvHandler.processInputFile();
+					environment.getReport().setTimeReadFromTsv(contextReadFromTsv.stop()/1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("tsv", e);
 					throw new RuntimeException(e);
+				} finally {
 				}
 			});
 
@@ -132,6 +148,8 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 	@PreDestroy
 	public void onExit() throws IOException, JAXBException, URISyntaxException {
 		LOGGER.warn("Exiting...");
+		long elapsed = contextAllRun.stop();
+		environment.getReport().setTimeAllRun(elapsed/1_000_000_000.0);
 		reportController.createReport();
 	}
 }

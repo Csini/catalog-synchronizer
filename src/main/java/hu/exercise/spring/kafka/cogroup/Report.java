@@ -45,6 +45,12 @@ public class Report {
 
 	private long sumDBEvents;
 
+	private double timeAllRun;
+	
+	private double timeReadFromDb;
+	
+	private double timeReadFromTsv;
+	
 	private int errorCode;
 
 	private Throwable reportedThrowable;
@@ -61,6 +67,7 @@ public class Report {
 		Testsuite testsuite = objectFactory.createTestsuite();
 		testsuites.getTestsuite().add(testsuite);
 		testsuite.setName("REQUEST: " + run.getRequestid().toString());
+		testsuite.setTime(timeAllRun);
 		this.testsuites = testsuites;
 		this.run = run;
 	}
@@ -110,13 +117,14 @@ public class Report {
 				Testcase testcaseDb = objectFactory.createTestcase();
 				testsuite.getTestcase().add(testcaseDb);
 				testcaseDb.setName("DB:" + getCountReadedFromDB());
+				testcaseDb.setTime(timeReadFromDb);
 			}
 
 			{
 				Testsuite tessuiteTSV = objectFactory.createTestsuite();
 				testsuite.getTestsuite().add(tessuiteTSV);
 				tessuiteTSV.setName("TSV:" + getCountReadedFromTsv());
-
+				tessuiteTSV.setTime(timeReadFromTsv);
 				{
 					Testcase testcaseValid = objectFactory.createTestcase();
 					tessuiteTSV.getTestcase().add(testcaseValid);
