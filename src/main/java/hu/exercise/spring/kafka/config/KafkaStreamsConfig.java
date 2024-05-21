@@ -22,6 +22,9 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
 import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
@@ -69,6 +72,9 @@ public class KafkaStreamsConfig {
 	
 	@Autowired
 	private PlatformTransactionManager txManager;
+	
+	@Autowired
+	private  MetricRegistry metrics;
 	
 	@Bean
 	public Serde<ProductRollup> productRollupSerde() {
@@ -206,7 +212,7 @@ public class KafkaStreamsConfig {
 				.stream(productTopic.name(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().toString().equals(key))
 //				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
-				.process(() -> new CustomProductPairAggregator(aggregateWindowInSec,flushSize, stateStoreName, environment), stateStoreName)
+				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec,flushSize, stateStoreName, environment), stateStoreName)
 				.process(() -> new CustomDBWriter(environment.getReport().getSumEvent(),environment, productService, txManager));
 
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),

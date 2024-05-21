@@ -71,9 +71,9 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 	@Override
 	public void run(String... args) {
 		LOGGER.info("args: " + args);
-		Timer timer = metrics.timer("contextAllRun");
-		contextAllRun = timer.time();
 		try {
+			Timer timer = metrics.timer("contextAllRun");
+			contextAllRun = timer.time();
 
 			// save metadata
 
@@ -87,7 +87,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilename("file3.txt");
+			run.setFilename("file2.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
@@ -100,7 +100,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 				Timer timerReadFromDB = metrics.timer("timerReadFromDB");
 				try (Timer.Context contextReadFromDB = timerReadFromDB.time();) {
 					dbProductMessageProducer.sendMessages();
-					environment.getReport().setTimeReadFromDb(contextReadFromDB.stop()/1_000_000_000.0);
+					environment.getReport().setTimeReadFromDb(contextReadFromDB.stop() / 1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("db", e);
 					throw new RuntimeException(e);
@@ -112,7 +112,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 				;
 				try (Timer.Context contextReadFromTsv = timerReadFromTsv.time();) {
 					tsvHandler.processInputFile();
-					environment.getReport().setTimeReadFromTsv(contextReadFromTsv.stop()/1_000_000_000.0);
+					environment.getReport().setTimeReadFromTsv(contextReadFromTsv.stop() / 1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("tsv", e);
 					throw new RuntimeException(e);
@@ -149,7 +149,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 	public void onExit() throws IOException, JAXBException, URISyntaxException {
 		LOGGER.warn("Exiting...");
 		long elapsed = contextAllRun.stop();
-		environment.getReport().setTimeAllRun(elapsed/1_000_000_000.0);
+		environment.getReport().setTimeAllRun(elapsed / 1_000_000_000.0);
 		reportController.createReport();
 	}
 }

@@ -46,59 +46,62 @@ public class Report {
 	private long sumDBEvents;
 
 	private double timeAllRun;
-	
+
 	private double timeReadFromDb;
-	
+
 	private double timeReadFromTsv;
 	
+	private double timerProcessing;
+
 	private int errorCode;
 
 	private Throwable reportedThrowable;
 
 	private Testsuites testsuites;
+	
+	private static final ObjectFactory OBJECTFACTORY = new ObjectFactory();
 
 	public Report(Run run) {
 		super();
 
-		ObjectFactory objectFactory = new ObjectFactory();
+		Testsuites testsuites = OBJECTFACTORY.createTestsuites();
 
-		Testsuites testsuites = objectFactory.createTestsuites();
-
-		Testsuite testsuite = objectFactory.createTestsuite();
-		testsuites.getTestsuite().add(testsuite);
-		testsuite.setName("REQUEST: " + run.getRequestid().toString());
-		testsuite.setTime(timeAllRun);
 		this.testsuites = testsuites;
 		this.run = run;
 	}
 
 	public Testsuites createTestsuites() {
 
-		ObjectFactory objectFactory = new ObjectFactory();
+		{
+			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
+			testsuites.getTestsuite().add(testsuite);
+			testsuite.setName("REQUEST: " + run.getRequestid().toString());
+			testsuite.setTime(timeAllRun);
+		}
 
-		Testsuite testsuiteF = objectFactory.createTestsuite();
+		Testsuite testsuiteF = OBJECTFACTORY.createTestsuite();
 		testsuites.getTestsuite().add(testsuiteF);
 		testsuiteF.setName("input: " + this.run.getFilename());
 
 		if (getReportedThrowable() != null || getErrorCode() > 0) {
-			Testsuite testsuiteError = objectFactory.createTestsuite();
+			Testsuite testsuiteError = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuiteError);
 			testsuiteError.setName("ERROR");
 
 			if (getErrorCode() > 0) {
-				Testcase testcaseError = objectFactory.createTestcase();
+				Testcase testcaseError = OBJECTFACTORY.createTestcase();
 				testsuiteError.getTestcase().add(testcaseError);
 				testcaseError.setName("ErrorCode: " + getErrorCode());
-				Error error = objectFactory.createError();
+				Error error = OBJECTFACTORY.createError();
 				// TODO
 //				error.setContent();
 				testcaseError.getError().add(error);
 			}
 
 			if (getReportedThrowable() != null) {
-				Testcase testcaseError = objectFactory.createTestcase();
+				Testcase testcaseError = OBJECTFACTORY.createTestcase();
 				testsuiteError.getTestcase().add(testcaseError);
-				Error error = objectFactory.createError();
+				Error error = OBJECTFACTORY.createError();
 				testcaseError.setName(getReportedThrowable().getClass().getName());
 
 				error.setContent(ExceptionUtils.getStackTrace(getReportedThrowable()));
@@ -108,31 +111,32 @@ public class Report {
 		}
 
 		{
-			Testsuite testsuite = objectFactory.createTestsuite();
+			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuite);
 			testsuite.setName("Readed Valid Products:" + getSumReaded());
 //			testsuite.setHostname(environment.getFilename());
+			testsuite.setTime(Math.max(timeReadFromDb, timeReadFromTsv));
 
 			{
-				Testcase testcaseDb = objectFactory.createTestcase();
+				Testcase testcaseDb = OBJECTFACTORY.createTestcase();
 				testsuite.getTestcase().add(testcaseDb);
 				testcaseDb.setName("DB:" + getCountReadedFromDB());
 				testcaseDb.setTime(timeReadFromDb);
 			}
 
 			{
-				Testsuite tessuiteTSV = objectFactory.createTestsuite();
+				Testsuite tessuiteTSV = OBJECTFACTORY.createTestsuite();
 				testsuite.getTestsuite().add(tessuiteTSV);
 				tessuiteTSV.setName("TSV:" + getCountReadedFromTsv());
 				tessuiteTSV.setTime(timeReadFromTsv);
 				{
-					Testcase testcaseValid = objectFactory.createTestcase();
+					Testcase testcaseValid = OBJECTFACTORY.createTestcase();
 					tessuiteTSV.getTestcase().add(testcaseValid);
 					testcaseValid.setName("Valid:" + getCountReadedFromTsvValid());
 				}
 
 				{
-					Testcase testcaseInvalid = objectFactory.createTestcase();
+					Testcase testcaseInvalid = OBJECTFACTORY.createTestcase();
 					tessuiteTSV.getTestcase().add(testcaseInvalid);
 					testcaseInvalid.setName("Invalid:" + getCountReadedFromTsvInvalid());
 				}
@@ -141,35 +145,36 @@ public class Report {
 		}
 
 		{
-			Testsuite testsuite = objectFactory.createTestsuite();
+			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuite);
 			testsuite.setName("Processed Products: " + getSumProcessed());
 
 		}
 		{
-			Testsuite testsuite = objectFactory.createTestsuite();
+			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuite);
 			testsuite.setName("Processed Events: " + getSumDBEvents());
+			testsuite.setTime(timerProcessing);
 			{
-				Testcase testcase = objectFactory.createTestcase();
+				Testcase testcase = OBJECTFACTORY.createTestcase();
 				testsuite.getTestcase().add(testcase);
 				testcase.setName("INSERT: " + getCountInsert());
 			}
 
 			{
-				Testcase testcase = objectFactory.createTestcase();
+				Testcase testcase = OBJECTFACTORY.createTestcase();
 				testsuite.getTestcase().add(testcase);
 				testcase.setName("UPDATE: " + getCountUpdate());
 			}
 
 			{
-				Testcase testcase = objectFactory.createTestcase();
+				Testcase testcase = OBJECTFACTORY.createTestcase();
 				testsuite.getTestcase().add(testcase);
 				testcase.setName("DELETE: " + getCountDelete());
 			}
 
 			{
-				Testcase testcase = objectFactory.createTestcase();
+				Testcase testcase = OBJECTFACTORY.createTestcase();
 				testsuite.getTestcase().add(testcase);
 				testcase.setName("NOCHANGE: 0");
 			}
@@ -177,7 +182,7 @@ public class Report {
 		}
 
 		{
-			Testsuite testsuite = objectFactory.createTestsuite();
+			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuite);
 			testsuite.setName("Invalid EXAMPLES:");
 		}

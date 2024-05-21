@@ -26,6 +26,9 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.KafkaUtils;
 import hu.exercise.spring.kafka.event.ProductEvent;
@@ -55,14 +58,19 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	private int flushedItemCounter = 0;
 	
 	private int eventCounter = 0;
+	
+	private Timer.Context contextProcessing;
+	
+	private Timer timerProcessing;
 
-	public CustomProductPairAggregator(int aggregateWindowInSec, int flushSize, String stateStoreName,
+	public CustomProductPairAggregator( MetricRegistry metrics, int aggregateWindowInSec, int flushSize, String stateStoreName,
 			KafkaEnvironment environment) {
 		super();
 		this.stateStoreName = stateStoreName;
 		this.environment = environment;
 		this.aggregateWindowInSec = aggregateWindowInSec;
 		this.flushSize = flushSize;
+		this.timerProcessing = metrics.timer("timerProcessing");
 	}
 
 	@Override
@@ -73,6 +81,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		context.schedule(Duration.ofSeconds(this.aggregateWindowInSec), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
 //		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
 		store = context.getStateStore(stateStoreName);
+		
+		this.contextProcessing = timerProcessing.time();
 	}
 
 	@Override
@@ -251,6 +261,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		LOGGER.info("processCounter: " + processCounter);
 
 		LOGGER.warn("foundCounter: " + foundCounter);
+		this.environment.getReport().setTimerProcessing(contextProcessing.stop()/1_000_000_000.0);
 	}
 
 }
