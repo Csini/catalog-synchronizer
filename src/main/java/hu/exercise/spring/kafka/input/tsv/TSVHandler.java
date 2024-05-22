@@ -21,9 +21,9 @@ import jakarta.annotation.PostConstruct;
 @Service
 public class TSVHandler {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CreateTopicsSpringApplication.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TSVHandler.class);
 
-	private static TsvParser parser;
+	private TsvParser parser;
 
 	@Autowired
 	private CustomBeanListProcessor customBeanListProcessor;

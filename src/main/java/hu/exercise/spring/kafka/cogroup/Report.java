@@ -2,17 +2,22 @@ package hu.exercise.spring.kafka.cogroup;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.input.Run;
 import hu.exercise.spring.kafka.output.Error;
 import hu.exercise.spring.kafka.output.ObjectFactory;
 import hu.exercise.spring.kafka.output.Testcase;
 import hu.exercise.spring.kafka.output.Testsuite;
 import hu.exercise.spring.kafka.output.Testsuites;
+import jakarta.validation.ConstraintViolation;
 import lombok.Data;
 
 @Data
@@ -54,6 +59,10 @@ public class Report {
 	private double timeReadFromTsv;
 
 	private double timerProcessing;
+
+	private double timerGenerateInvalidExamples;
+
+	private List<InvalidExample> invalidExamples = new ArrayList<>();
 
 	private int errorCode;
 
@@ -187,6 +196,19 @@ public class Report {
 			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuite);
 			testsuite.setName("Invalid EXAMPLES:");
+			testsuite.setTime(timerGenerateInvalidExamples);
+
+			invalidExamples.forEach(example -> {
+				Testcase testcase = OBJECTFACTORY.createTestcase();
+				testcase.setName(example.getTsvContent());
+				Set<ConstraintViolation<Product>> violations = example.getViolations();
+
+				violations.forEach(v -> {
+					testcase.getSystemOut().add(v.getInvalidValue() + " - " + v);
+				});
+				testsuite.getTestcase().add(testcase);
+			});
+
 		}
 
 		return testsuites;

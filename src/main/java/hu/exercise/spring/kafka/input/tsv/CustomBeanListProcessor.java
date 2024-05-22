@@ -87,7 +87,7 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 			LOGGER.error("at " + bean.getId(), violations);
 			// send to invalid topic
 			// TODO
-			String violationtext = violations.stream().map(v -> v.toString()).collect(Collectors.joining(","));
+			String violationtext = violations.stream().map(v -> v.getInvalidValue() + " - "+ v.toString()).collect(Collectors.joining(","));
 			ProductErrorEvent productErrorEvent = new ProductErrorEvent(environment.getRequestid(), bean.getId(), bean,
 					new IllegalArgumentException(violationtext));
 			invalidMessageProducer.sendEvent(productErrorEvent);

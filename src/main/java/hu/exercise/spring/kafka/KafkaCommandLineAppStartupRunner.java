@@ -23,6 +23,7 @@ import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.RunMessageProducer;
 import hu.exercise.spring.kafka.input.Run;
+import hu.exercise.spring.kafka.input.tsv.InvalidExamplesHandler;
 import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 import hu.exercise.spring.kafka.service.RunService;
 import jakarta.annotation.PreDestroy;
@@ -64,6 +65,9 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 	KafkaReportController reportController;
 
 	@Autowired
+	InvalidExamplesHandler invalidExamplesHandler;
+
+	@Autowired
 	MetricRegistry metrics;
 
 	Timer.Context contextAllRun;
@@ -87,7 +91,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilename("file3.txt");
+			run.setFilename("file2.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
@@ -95,7 +99,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			LOGGER.warn(run.toString());
 
-			ExecutorService service = Executors.newFixedThreadPool(2);
+			ExecutorService service = Executors.newFixedThreadPool(3);
 			Future<?> readFromDb = service.submit(() -> {
 				Timer timerReadFromDB = metrics.timer("timerReadFromDB");
 				try (Timer.Context contextReadFromDB = timerReadFromDB.time();) {
@@ -115,6 +119,20 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 					environment.getReport().setTimeReadFromTsv(contextReadFromTsv.stop() / 1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("tsv", e);
+					throw new RuntimeException(e);
+				} finally {
+				}
+			});
+
+			Future<?> generateInvalidExamples = service.submit(() -> {
+				Timer timerGenerateInvalidExamples = metrics.timer("timerGenerateInvalidExamples");
+				;
+				try (Timer.Context contextGenerateInvalidExamples = timerGenerateInvalidExamples.time();) {
+					environment.getReport().getInvalidExamples().addAll(invalidExamplesHandler.getInvalidExamples(10));
+					environment.getReport()
+							.setTimerGenerateInvalidExamples(contextGenerateInvalidExamples.stop() / 1_000_000_000.0);
+				} catch (Exception e) {
+					LOGGER.error("generateInvalidExamples", e);
 					throw new RuntimeException(e);
 				} finally {
 				}
