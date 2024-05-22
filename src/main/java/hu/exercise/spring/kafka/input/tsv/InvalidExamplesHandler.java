@@ -19,8 +19,6 @@ import com.univocity.parsers.tsv.TsvWriterSettings;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.InvalidExample;
 import hu.exercise.spring.kafka.input.Product;
-import hu.exercise.spring.kafka.output.ObjectFactory;
-import hu.exercise.spring.kafka.output.Testcase;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -55,6 +53,16 @@ public class InvalidExamplesHandler {
 		// customWriterErrorHandler.setContext(writer.getContext());
 		EasyRandomParameters parameters = new EasyRandomParameters();
 		parameters.excludeType((Class<?> c) -> Currency.class.equals(c));
+//		image_link
+		parameters.randomize(field -> {
+
+			return Math.random() > 0.5 && ("link".equals(field.getName()) || ("image_link".equals(field.getName())));
+		}, () -> "http://random");
+		
+		parameters.randomize(field -> {
+
+			return Math.random() > 0.5 && "id".equals(field.getName());
+		}, () -> "12345678910111213141516171819202122232425262728293031323334353637383940");
 		generator = new EasyRandom(parameters);
 	}
 

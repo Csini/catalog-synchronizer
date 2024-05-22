@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.input.Run;
 import hu.exercise.spring.kafka.output.Error;
 import hu.exercise.spring.kafka.output.ObjectFactory;
+import hu.exercise.spring.kafka.output.Skipped;
 import hu.exercise.spring.kafka.output.Testcase;
 import hu.exercise.spring.kafka.output.Testsuite;
 import hu.exercise.spring.kafka.output.Testsuites;
@@ -201,11 +203,13 @@ public class Report {
 			invalidExamples.forEach(example -> {
 				Testcase testcase = OBJECTFACTORY.createTestcase();
 				testcase.setName(example.getTsvContent());
+				Skipped skipped = OBJECTFACTORY.createSkipped();
+				testcase.setSkipped(skipped);
 				Set<ConstraintViolation<Product>> violations = example.getViolations();
 
-				violations.forEach(v -> {
-					testcase.getSystemOut().add(v.getInvalidValue() + " - " + v);
-				});
+				skipped.setMessage(
+						violations.stream().map(v ->  v.getPropertyPath() +": " + v.getInvalidValue() + " - " +v.getMessage()).collect(Collectors.joining("\n")));
+
 				testsuite.getTestcase().add(testcase);
 			});
 
