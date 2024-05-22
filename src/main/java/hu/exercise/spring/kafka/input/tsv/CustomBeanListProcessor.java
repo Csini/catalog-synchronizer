@@ -37,13 +37,13 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 	@Autowired
 	private ValidMessageProducer validMessageProducer;
-	
+
 	@Autowired
 	private InvalidMessageProducer invalidMessageProducer;
 
 	@Autowired
 	public KafkaEnvironment environment;
-	
+
 	private int counter = 0;
 
 	public CustomBeanListProcessor() {
@@ -82,12 +82,14 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 			// send to valid topic
 			ProductEvent productEvent = new ProductEvent(bean.getId(), environment.getRequestid(), Source.TSV, bean);
 			validMessageProducer.sendEvent(productEvent);
-			
+
 		} else {
 			LOGGER.error("at " + bean.getId(), violations);
 			// send to invalid topic
 			// TODO
-			String violationtext = violations.stream().map(v -> v.getInvalidValue() + " - "+ v.toString()).collect(Collectors.joining(","));
+			String violationtext = violations.stream()
+					.map(v -> v.getPropertyPath() + ": " + v.getInvalidValue() + " - " + v.getMessage())
+					.collect(Collectors.joining(","));
 			ProductErrorEvent productErrorEvent = new ProductErrorEvent(environment.getRequestid(), bean.getId(), bean,
 					new IllegalArgumentException(violationtext));
 			invalidMessageProducer.sendEvent(productErrorEvent);
@@ -102,6 +104,5 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	public int getCounter() {
 		return counter;
 	}
-	
 
 }
