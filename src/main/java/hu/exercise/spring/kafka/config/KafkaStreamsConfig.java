@@ -22,12 +22,16 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
 import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
+import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
-import hu.exercise.spring.kafka.cogroup.Flushed;
+import hu.exercise.spring.kafka.cogroup.Report;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
@@ -42,17 +46,17 @@ public class KafkaStreamsConfig {
 	@Value(value = "${spring.kafka.bootstrap-servers}")
 	private String bootstrapAddress;
 
-//    @Value("${kafka.topics.iot}")
-//    private String iotTopicName;
+	@Value(value = "${productPair.store.name}")
+	private String productPairStoreName;
+	
+	@Value(value = "${aggregateWindowInSec}")
+	private int aggregateWindowInSec;
 
+	@Value(value = "${flushSize}")
+	private int flushSize;
+	
 	@Autowired
-	public NewTopic productRollup;
-
-	@Autowired
-	public NewTopic readedFromDb;
-
-	@Autowired
-	public NewTopic validProduct;
+	public NewTopic flushed;
 
 	@Autowired
 	public NewTopic productTopic;
@@ -68,7 +72,10 @@ public class KafkaStreamsConfig {
 	
 	@Autowired
 	private PlatformTransactionManager txManager;
-
+	
+	@Autowired
+	private  MetricRegistry metrics;
+	
 	@Bean
 	public Serde<ProductRollup> productRollupSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProductRollup.class));
@@ -114,10 +121,6 @@ public class KafkaStreamsConfig {
 //	@Bean
 //	public KStream<String, ProductRollup> productRollupStream(StreamsBuilder builder) {
 	public KStream<String, Flushed> productRollupStream() {
-		final String readedFromDbTopic = readedFromDb.name();
-		final String validProductTopic = validProduct.name();
-
-		final String totalResultOutputTopic = productRollup.name();
 
 		final Serde<String> stringSerde = Serdes.String();
 //		final Serde<Windowed<String>> windowedSerde = WindowedSerdes.sessionWindowedSerdeFrom(String.class);
@@ -199,22 +202,23 @@ public class KafkaStreamsConfig {
 //		KStream<Windowed<String>, ProductRollup> lastStream = last.toStream();
 //
 
-		String stateStoreName = "aggStore" + "-" + environment.getRequestid().toString();
+		String stateStoreName = productPairStoreName + "-" + environment.getRequestid().toString();
 
 		StoreBuilder<KeyValueStore<String, ProductPair>> keyValueStoreBuilder = Stores
-				.keyValueStoreBuilder(Stores.persistentKeyValueStore(stateStoreName), stringSerde, productPairSerde);
+				.keyValueStoreBuilder(Stores.persistentTimestampedKeyValueStore(stateStoreName), stringSerde, productPairSerde);
 		builder.addStateStore(keyValueStoreBuilder);
 
 		KStream<String, Flushed> lastStream = builder
 				.stream(productTopic.name(), Consumed.with(stringSerde, productEventSerde))
-				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
-				.process(() -> new CustomProductPairAggregator(stateStoreName, environment), stateStoreName)
-				.process(() -> new CustomDBWriter(environment, productService, txManager));
+				.filter((key, productEvent) -> environment.getRequestid().toString().equals(key))
+//				.filter((key, productEvent) -> environment.getRequestid().equals(productEvent.getRequestid()))
+				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec,flushSize, stateStoreName, environment), stateStoreName)
+				.process(() -> new CustomDBWriter(environment.getReport().getSumEvent(),environment, productService, txManager));
 
 //		KStream<String, ProductRollup> lastStream = builder.stream(productRollup.name(),
 //				Consumed.with(stringSerde, productRollupSerde));
 
-		lastStream.to(totalResultOutputTopic, Produced.with(stringSerde, flushedSerde()));
+		lastStream.to(flushed.name(), Produced.with(stringSerde, flushedSerde()));
 
 		Serde<Product> productSerde = productSerde();
 

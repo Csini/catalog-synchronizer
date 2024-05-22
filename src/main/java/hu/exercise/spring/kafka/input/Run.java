@@ -34,7 +34,7 @@ public class Run {
 	//@GeneratedValue(strategy = GenerationType.UUID)
 	private String requestid = UUID.randomUUID().toString();
 
-	private String filenane;
+	private String filename;
 
 	@CreationTimestamp
 	@Temporal(TemporalType.TIMESTAMP)
@@ -45,7 +45,7 @@ public class Run {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updated;
 	
-	public Run(String filenane) {
-		this.filenane = filenane;
+	public Run(String filename) {
+		this.filename = filename;
 	}
 }

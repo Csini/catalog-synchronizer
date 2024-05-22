@@ -31,17 +31,19 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 	private KafkaEnvironment environment;
 
-	private int processCounter = 0;
+	private int flushCounter = 0;
 
 	private PlatformTransactionManager txManager;
 
 	private TransactionStatus status;
 
 	private Map<String, Product> readedFromDbMap = new HashMap<String, Product>();
+	private int readed;
 
-	public CustomDBWriter(KafkaEnvironment environment, ProductService productService,
+	public CustomDBWriter(int readed, KafkaEnvironment environment, ProductService productService,
 			PlatformTransactionManager txManager) {
 		super();
+		this.readed = readed;
 		this.environment = environment;
 		this.productService = productService;
 		this.txManager = txManager;
@@ -67,12 +69,57 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 			LOGGER.debug("processing: " + rec.value());
 		}
 
-		processCounter++;
+		flushCounter++;
 
 //		LOGGER.info("processCounter: " + processCounter);
 
 		AtomicInteger counter = new AtomicInteger();
 
+		Map<Action, List<Product>> groupedProductRollups = group(rec, counter);
+
+//		groupedProductRollups.entrySet().forEach(entry -> {
+//			LOGGER.warn(entry.getKey() + ": " + entry.getValue().size());
+//		});
+
+		Flushed flushed = Flushed.builder().requestid(environment.getRequestid().toString())
+				.sumProcessed(rec.value().getProcessed()).build();
+
+		if (groupedProductRollups.containsKey(Action.DELETE)) {
+//				groupedProductRollups.get(Action.DELETE).forEach(p -> productService.deleteProduct(p.getId()));
+			List<Product> productList = groupedProductRollups.get(Action.DELETE);
+			productService.bulkDeleteProducts(productList, productList.size());
+			flushed.setCountDelete(productList.size());
+		}
+		if (groupedProductRollups.containsKey(Action.UPDATE)) {
+			List<Product> productList = groupedProductRollups.get(Action.UPDATE);
+			productService.bulkUpdateProducts(productList, productList.size());
+			flushed.setCountUpdate(productList.size());
+		}
+		if (groupedProductRollups.containsKey(Action.INSERT)) {
+			List<Product> productList = groupedProductRollups.get(Action.INSERT);
+			productService.bulkInsertProducts(productList, productList.size());
+			flushed.setCountInsert(productList.size());
+		}
+
+		if (groupedProductRollups.containsKey(Action.ERROR)) {
+			List<Product> productList = groupedProductRollups.get(Action.ERROR);
+			LOGGER.error("ERROR: " + productList);
+			flushed.setCountError(productList.size());
+		}
+
+		LOGGER.warn("processed: " + counter);
+
+		environment.getReport().setSumDBEvents(environment.getReport().getSumDBEvents() + counter.intValue());
+		// TODO
+		if (environment.getReport().getSumEvent() <= flushed.getSumProcessed()) {
+			this.txManager.commit(this.status);
+		}
+
+		context.forward(
+				new Record<String, Flushed>(environment.getRequestid().toString(), flushed, new Date().getTime()));
+	}
+
+	private Map<Action, List<Product>> group(Record<String, ProductRollup> rec, AtomicInteger counter) {
 		Map<Action, List<Product>> groupedProductRollups = rec.value().getPairList().stream()
 				.map((ProductPair pair) -> {
 					Product productToSave = pair.getProductToSave();
@@ -93,6 +140,11 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 						}
 						readedFromDbMap.remove(productToSave.getId());
 						readedFromDb.merge(productToSave);
+
+						if (Action.UPDATE.equals(pair.getAction()) && !readedFromDb.isChange()) {
+							this.environment.getReport()
+									.setCountNoChange(this.environment.getReport().getCountNoChange() + 1);
+						}
 //				readedFromDb.setNew(false);)
 						return readedFromDb;
 					}
@@ -101,50 +153,15 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 					return productToSave;
 				}, Collectors.toList())));
-
-		groupedProductRollups.entrySet().forEach(entry -> {
-			LOGGER.warn(entry.getKey() + ": " + entry.getValue().size());
-		});
-
-		Flushed flushed = Flushed.builder().requestid(environment.getRequestid().toString())
-				.countProcessed(rec.value().getProcessed()).build();
-		if (groupedProductRollups.containsKey(Action.DELETE)) {
-//				groupedProductRollups.get(Action.DELETE).forEach(p -> productService.deleteProduct(p.getId()));
-			List<Product> productList = groupedProductRollups.get(Action.DELETE);
-			productService.bulkDeleteProducts(productList);
-			flushed.setCountDelete(productList.size());
-		}
-		if (groupedProductRollups.containsKey(Action.UPDATE)) {
-			List<Product> productList = groupedProductRollups.get(Action.UPDATE);
-			productService.bulkSaveProducts(productList);
-			flushed.setCountUpdate(productList.size());
-		}
-		if (groupedProductRollups.containsKey(Action.INSERT)) {
-			List<Product> productList = groupedProductRollups.get(Action.INSERT);
-			productService.bulkSaveProducts(productList);
-			flushed.setCountInsert(productList.size());
-		}
-
-		if (groupedProductRollups.containsKey(Action.ERROR)) {
-			List<Product> productList = groupedProductRollups.get(Action.ERROR);
-			LOGGER.error("ERROR: " + productList);
-			flushed.setCountError(productList.size());
-		}
-
-		LOGGER.warn("flushed: " + counter);
-
-		// TODO
-
-		context.forward(
-				new Record<String, Flushed>(environment.getRequestid().toString(), flushed, new Date().getTime()));
+		return groupedProductRollups;
 	}
 
 	@Override
 	public void close() {
 		// TODO clear store ?
 //		store.
-		txManager.commit(this.status);
-		LOGGER.info("processCounter: " + processCounter);
+//		txManager.commit(this.status);
+		LOGGER.info("flushCounter: " + flushCounter);
 	}
 
 }

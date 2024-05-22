@@ -23,5 +23,5 @@ public class Flushed {
 	
 	private int countError;
 	
-	private int countProcessed;
+	private int sumProcessed;
 }

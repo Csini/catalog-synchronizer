@@ -3,19 +3,18 @@ package hu.exercise.spring.kafka.cogroup;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.processor.PunctuationType;
@@ -27,7 +26,11 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.KafkaUtils;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.event.Source;
 
@@ -44,20 +47,42 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 	private int flushCounter = 0;
 
+	private int foundCounter = 0;
+
 	public KafkaEnvironment environment;
 
-	public CustomProductPairAggregator(String stateStoreName, KafkaEnvironment environment) {
+	private int aggregateWindowInSec;
+
+	private int flushSize;
+
+	private int flushedItemCounter = 0;
+	
+	private int eventCounter = 0;
+	
+	private Timer.Context contextProcessing;
+	
+	private Timer timerProcessing;
+
+	public CustomProductPairAggregator( MetricRegistry metrics, int aggregateWindowInSec, int flushSize, String stateStoreName,
+			KafkaEnvironment environment) {
 		super();
 		this.stateStoreName = stateStoreName;
 		this.environment = environment;
+		this.aggregateWindowInSec = aggregateWindowInSec;
+		this.flushSize = flushSize;
+		this.timerProcessing = metrics.timer("timerProcessing");
 	}
 
 	@Override
 	public void init(final ProcessorContext<String, ProductRollup> context) {
 		this.context = context;
-		context.schedule(Duration.ofSeconds(60), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
-		context.schedule(Duration.ofSeconds(10), PunctuationType.STREAM_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(240), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(this.aggregateWindowInSec), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
+//		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
 		store = context.getStateStore(stateStoreName);
+		
+		this.contextProcessing = timerProcessing.time();
 	}
 
 	@Override
@@ -67,16 +92,20 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		}
 
 		processCounter++;
-
 //		LOGGER.info("processCounter: " + processCounter);
 
-		ProductPair oldValue = store.get(rec.key());
+		String id = rec.value().getId();
+		ProductPair oldValue = store.get(id);
+//		LOGGER.warn("found(" + id + "): " + oldValue);
 
 		if (oldValue == null) {
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug("NEW!!!!");
 			}
-			oldValue = new ProductPair(rec.value().getId(), rec.value().getRequestid().toString());
+			oldValue = new ProductPair(id, rec.value().getRequestid().toString());
+			eventCounter++;
+		} else {
+			foundCounter++;
 		}
 
 		if (LOGGER.isDebugEnabled()) {
@@ -97,15 +126,27 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //			oldvalue.setTimestamp(rec.timestamp());
 //			store.put(key, value);
 //		}
+//		LOGGER.warn("putting(" + id + "): " + oldValue);
+		store.put(id, oldValue);
 
-		store.put(rec.key(), oldValue);
+		if (processCounter >= environment.getReport().getSumReaded()) {
+			environment.getReport().setSumEvent(eventCounter);
+//			flushStoreBatched();
+			flushStore();
+		}
 	}
-	
+
 	private void flushStore() {
+		LOGGER.warn("flushStore: " + store.approximateNumEntries());
+		if (flushCounter == 0 && store.approximateNumEntries() == 1) {
+			LOGGER.warn("don't do anything yet, waiting " + aggregateWindowInSec + " seconds...");
+			return;
+		}
 		AtomicInteger counter = new AtomicInteger();
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
-			ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), counter.get(), processCounter);
+			ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), counter.get(),
+					processCounter);
 			while (it.hasNext()) {
 				KeyValue<String, ProductPair> next = it.next();
 				counter.incrementAndGet();
@@ -123,50 +164,53 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		}
 	}
 
-	// batchSize = 150, processCounter not working!
-	private void flushStoreBatched(int batchSize) {
+	private void flushStoreBatched() {
+		LOGGER.warn("flushStoreBatched");;
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
-			Stream<KeyValue<String, ProductPair>> stream = getStreamFromIterator(it);
-			partitionStream(stream, batchSize).forEach(nextList -> {
-				AtomicInteger counter = new AtomicInteger();
+			Stream<KeyValue<String, ProductPair>> stream = KafkaUtils.getStreamFromIterator(it);
+			Optional<List<KeyValue<String, ProductPair>>> lastElement = partitionStream(stream, flushSize).stream()
+					.map(nextList -> {
+//						try {
+//							LOGGER.warn("waiting " + aggregateWindowInSec + " seconds..");
+//							TimeUnit.SECONDS.sleep(aggregateWindowInSec);
+//						} catch (InterruptedException e) {
+//							// TODO
+//							throw new RuntimeException(e);
+//						}
+						ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(),
+								flushCounter, flushedItemCounter);
+						if (LOGGER.isDebugEnabled()) {
+							LOGGER.debug("nextList: " + nextList);
+						}
+						nextList.stream().forEach(next -> {
+							toBeForwarded.getPairList().add(next.value);
+							flushedItemCounter++;
+							store.delete(next.key);
+						});
+						LOGGER.warn("flushed (" + flushCounter + ") sum: " + flushedItemCounter);
+						context.forward(new Record<String, ProductRollup>(
+								environment.getRequestid() + "-" + flushCounter, toBeForwarded, new Date().getTime()));
+						flushCounter++;
+						return nextList;
+					}).reduce((first, second) -> second);
+			lastElement.ifPresent(value -> {
 				ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), flushCounter,
-						processCounter);
-				if (LOGGER.isDebugEnabled()) {
-					LOGGER.debug("nextList: " + nextList);
-				}
-				nextList.stream().forEach(next -> {
-					toBeForwarded.getPairList().add(next.value);
-					counter.incrementAndGet();
-					store.delete(next.key);
-				});
-				LOGGER.warn("flushed (" + flushCounter + "): " + counter);
+						flushCounter);
 				context.forward(new Record<String, ProductRollup>(environment.getRequestid() + "-" + flushCounter,
 						toBeForwarded, new Date().getTime()));
-				flushCounter++;
 			});
 
 		}
 	}
 
-	// https://www.geeksforgeeks.org/convert-an-iterator-to-stream-in-java/
-	// Function to get the Stream
-	public static <T> Stream<T> getStreamFromIterator(Iterator<T> iterator) {
-
-		// Convert the iterator to Spliterator
-		Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, 0);
-
-		// Get a Sequential Stream from spliterator
-		return StreamSupport.stream(spliterator, false);
-	}
-
-	static <T> List<List<T>> partitionStream(Stream<T> source, int batchSize) {
-		return source.collect(partitionBySize(batchSize, Collectors.toList()));
+	static <T> List<List<T>> partitionStream(Stream<T> source, int flushSize) {
+		return source.collect(partitionBySize(flushSize, Collectors.toList()));
 	}
 
 	// https://www.baeldung.com/java-partition-stream
-	static <T, A, R> Collector<T, ?, R> partitionBySize(int batchSize, Collector<List<T>, A, R> downstream) {
-		Supplier<Accumulator<T, A>> supplier = () -> new Accumulator<>(batchSize, downstream.supplier().get(),
+	static <T, A, R> Collector<T, ?, R> partitionBySize(int flushSize, Collector<List<T>, A, R> downstream) {
+		Supplier<Accumulator<T, A>> supplier = () -> new Accumulator<>(flushSize, downstream.supplier().get(),
 				downstream.accumulator()::accept);
 
 		BiConsumer<Accumulator<T, A>, T> accumulator = (acc, value) -> acc.add(value);
@@ -185,19 +229,19 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 	static class Accumulator<T, A> {
 		private final List<T> values = new ArrayList<>();
-		private final int batchSize;
+		private final int flushSize;
 		private A downstreamAccumulator;
 		private final BiConsumer<A, List<T>> batchFullListener;
 
-		Accumulator(int batchSize, A accumulator, BiConsumer<A, List<T>> onBatchFull) {
-			this.batchSize = batchSize;
+		Accumulator(int flushSize, A accumulator, BiConsumer<A, List<T>> onBatchFull) {
+			this.flushSize = flushSize;
 			this.downstreamAccumulator = accumulator;
 			this.batchFullListener = onBatchFull;
 		}
 
 		void add(T value) {
 			values.add(value);
-			if (values.size() == batchSize) {
+			if (values.size() == flushSize) {
 				batchFullListener.accept(downstreamAccumulator, new ArrayList<>(values));
 				values.clear();
 			}
@@ -215,6 +259,9 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		// TODO clear store ?
 //		store.
 		LOGGER.info("processCounter: " + processCounter);
+
+		LOGGER.warn("foundCounter: " + foundCounter);
+		this.environment.getReport().setTimerProcessing(contextProcessing.stop()/1_000_000_000.0);
 	}
 
 }

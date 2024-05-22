@@ -32,3 +32,6 @@ replay_pid*
 
 #db backup
 bkp
+
+#output
+/src/main/resources/output/

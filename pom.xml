@@ -197,6 +197,17 @@
 			<version>1.9.1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>io.dropwizard.metrics</groupId>
+			<artifactId>metrics-core</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jeasy</groupId>
+			<artifactId>easy-random-core</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -227,6 +238,56 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>target/generated-sources/jaxb</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>jaxb2-maven-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>xjc</id>
+						<goals>
+							<goal>xjc</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<packageName>hu.exercise.spring.kafka.output</packageName>
+					<sources>
+						<!--
+						<source>src/main/resources/xsd/xunit.xsd</source>-->
+						<source>src/main/resources/xsd/jenkins-junit.xsd</source>
+						<!--
+						<source>src/main/resources/xsd/junit.xsd</source>-->
+						<!--
+						<source>src/main/resources/xsd/junit-10.xsd</source>-->
+					</sources>
+					<addGeneratedAnnotation>true</addGeneratedAnnotation>
+					<!--					<xjbSources>-->
+					<!--
+					<xjbSource>src/dataexchange/special/aBindingConfiguration.xjb</xjbSource>-->
+					<!--            <xjbSource>src/dataexchange/xjbs</xjbSource>-->
+					<!--        </xjbSources>-->
+				</configuration>
 			</plugin>
 		</plugins>
 		<pluginManagement>

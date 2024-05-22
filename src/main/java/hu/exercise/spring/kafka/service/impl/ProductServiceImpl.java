@@ -1,20 +1,21 @@
 package hu.exercise.spring.kafka.service.impl;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Stream;
 
+import org.hibernate.cfg.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
+import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.KafkaUtils;
+import hu.exercise.spring.kafka.cogroup.Action;
+import hu.exercise.spring.kafka.event.DBEvent;
+import hu.exercise.spring.kafka.event.DBEventMessageProducer;
 import hu.exercise.spring.kafka.input.Product;
-import hu.exercise.spring.kafka.repository.CustomProductRepository;
 import hu.exercise.spring.kafka.repository.ProductRepository;
 import hu.exercise.spring.kafka.service.ProductService;
-import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -23,83 +24,55 @@ public class ProductServiceImpl implements ProductService {
 
 	private ProductRepository repository;
 
-	private CustomProductRepository customRepository;
+	private DBEventMessageProducer dbEventMessageProducer;
 
-//	private Map<String, Product> readedFromDbMap = new HashMap<String, Product>();
+	private KafkaEnvironment environment;
 
-	public ProductServiceImpl(@Autowired ProductRepository repository,
-			@Autowired CustomProductRepository customRepository) {
+	public ProductServiceImpl(@Autowired KafkaEnvironment environment, @Autowired ProductRepository repository,
+			@Autowired DBEventMessageProducer dbEventMessageProducer) {
 		super();
+		this.environment = environment;
 		this.repository = repository;
-		this.customRepository = customRepository;
+		this.dbEventMessageProducer = dbEventMessageProducer;
 	}
 
 	public void setRepository(ProductRepository repository) {
 		this.repository = repository;
 	}
 
-	public void setCustomRepository(CustomProductRepository customRepository) {
-		this.customRepository = customRepository;
-	}
-
 	@Override
 	public Stream<Product> getAllProducts(String requestid) {
-//		return customRepository.findAllProductsNative(requestid);
-//		Stream<Product> allByOrderByIdAsc = repository.findByOrderByIdAsc();
-		Stream<Product> allByOrderByIdAsc = CustomProductPairAggregator.getStreamFromIterator(repository.findAll().iterator());
+		Stream<Product> allByOrderByIdAsc = KafkaUtils.getStreamFromIterator(repository.findAll().iterator());
 		LOGGER.warn("allByOrderByIdAsc");
 		return allByOrderByIdAsc;
-//				.map(p -> {
-//			readedFromDbMap.put(p.getId(), p);
-//			return p;
-//		});
 	}
 
 	@Override
-	public Product getProduct(String id) throws EntityNotFoundException {
-		return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Product " + id + " not found"));
+	public Iterable<Product> bulkInsertProducts(Iterable<Product> productList, int productListSize ) {
+		
+		Iterable<Product> saveAll = repository.saveAll(productList);
+		
+		saveAll.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.INSERT)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		environment.getReport().printProgressbar();
+		return saveAll;
 	}
 
 	@Override
-	public String deleteProduct(String id) {
-		repository.deleteById(id);
-		return id;
+	public Iterable<Product> bulkUpdateProducts(Iterable<Product> productList, int productListSize ) {
+		Iterable<Product> saveAll = repository.saveAll(productList);
+		saveAll.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.UPDATE)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		environment.getReport().printProgressbar();
+		return saveAll;
 	}
 
 	@Override
-	public Product saveProduct(Product product) {
-		return repository.save(product);
-	}
-
-	@Override
-	public Iterable<Product> bulkSaveProducts(Iterable<Product> productList) {
-		return repository.saveAll(productList);
-	}
-
-//	@Override
-//	public void bulkInsertProducts(Iterable<Product> productList) {
-//		customRepository.insertAll(productList);
-//	}
-//
-//	@Override
-//	public void bulkUpdateProducts(Iterable<Product> productList) {
-//		customRepository.updateAll(productList);
-//	}
-
-	@Override
-	public void bulkDeleteProducts(Iterable<Product> productList) {
-//		customRepository.deleteAll(productList);
+	public void bulkDeleteProducts(Iterable<Product> productList, int productListSize ) {
 		repository.deleteAll(productList);
+		productList.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.DELETE)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		environment.getReport().printProgressbar();
 	}
-
-	@Override
-	public long getCountAllProducts() {
-		return repository.count();
-	}
-
-//	@Override
-//	public Map<String, Product> getReadedFromDbMap() {
-//		return readedFromDbMap;
-//	}
 
 }

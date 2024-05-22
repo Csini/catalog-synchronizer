@@ -1,5 +1,7 @@
 package hu.exercise.spring.kafka;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -14,12 +16,18 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.stereotype.Component;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.RunMessageProducer;
 import hu.exercise.spring.kafka.input.Run;
+import hu.exercise.spring.kafka.input.tsv.InvalidExamplesHandler;
 import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 import hu.exercise.spring.kafka.service.RunService;
+import jakarta.annotation.PreDestroy;
+import jakarta.xml.bind.JAXBException;
 
 @Component
 public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
@@ -53,11 +61,23 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 //	@Autowired
 //	PlatformTransactionManager txManager;
 
+	@Autowired
+	KafkaReportController reportController;
+
+	@Autowired
+	InvalidExamplesHandler invalidExamplesHandler;
+
+	@Autowired
+	MetricRegistry metrics;
+
+	Timer.Context contextAllRun;
+
 	@Override
 	public void run(String... args) {
 		LOGGER.info("args: " + args);
-
 		try {
+			Timer timer = metrics.timer("contextAllRun");
+			contextAllRun = timer.time();
 
 			// save metadata
 
@@ -71,28 +91,50 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			Run run = environment.getRun();
 			// TODO args[0]
-			run.setFilenane("/input/file1.txt");
+			run.setFilename("file2.txt");
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
+//			MDC.put("requestid", environment.getRequestid().toString());
 
 			LOGGER.warn(run.toString());
 
-			ExecutorService service = Executors.newFixedThreadPool(2);
+			ExecutorService service = Executors.newFixedThreadPool(3);
 			Future<?> readFromDb = service.submit(() -> {
-				try {
+				Timer timerReadFromDB = metrics.timer("timerReadFromDB");
+				try (Timer.Context contextReadFromDB = timerReadFromDB.time();) {
 					dbProductMessageProducer.sendMessages();
+					environment.getReport().setTimeReadFromDb(contextReadFromDB.stop() / 1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("db", e);
 					throw new RuntimeException(e);
+				} finally {
 				}
 			});
 			Future<?> readFromTsv = service.submit(() -> {
-				try {
+				Timer timerReadFromTsv = metrics.timer("timerReadFromTsv");
+				;
+				try (Timer.Context contextReadFromTsv = timerReadFromTsv.time();) {
 					tsvHandler.processInputFile();
+					environment.getReport().setTimeReadFromTsv(contextReadFromTsv.stop() / 1_000_000_000.0);
 				} catch (Exception e) {
 					LOGGER.error("tsv", e);
 					throw new RuntimeException(e);
+				} finally {
+				}
+			});
+
+			Future<?> generateInvalidExamples = service.submit(() -> {
+				Timer timerGenerateInvalidExamples = metrics.timer("timerGenerateInvalidExamples");
+				;
+				try (Timer.Context contextGenerateInvalidExamples = timerGenerateInvalidExamples.time();) {
+					environment.getReport().getInvalidExamples().addAll(invalidExamplesHandler.getInvalidExamples(10));
+					environment.getReport()
+							.setTimerGenerateInvalidExamples(contextGenerateInvalidExamples.stop() / 1_000_000_000.0);
+				} catch (Exception e) {
+					LOGGER.error("generateInvalidExamples", e);
+					throw new RuntimeException(e);
+				} finally {
 				}
 			});
 
@@ -106,36 +148,27 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 			streamsConfig.productRollupStream();
 
-			factory.setCleanupConfig(new CleanupConfig(true, true));
+			factory.setCleanupConfig(new CleanupConfig(true, false));
 			factory.setStreamsUncaughtExceptionHandler(ex -> {
 				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
 //			return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD;
-				shutdownController.shutdownContextWithError(2);
+				shutdownController.shutdownContextWithError(2, ex);
 				return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_APPLICATION;
 			});
 			factory.start();
+			environment.getReport().printProgressbar();
 
-//		KafkaStreams kafkaStreams = factory.getKafkaStreams();
-////		kafkaStreams.pause();
-////		kafkaStreams.cleanUp();
-//		kafkaStreams.start();
-			// TODO
-
-//		tsvHandler.processInputFile("/input/file2.txt");
-//		tsvHandler.processInputFile("/input/file3.txt");
-
-//		shutdownController.shutdownContext();
-
-//		try {
-//			// put your business logic here
-//		} catch (MyException ex) {
-//			txManager.rollback(status);
-//			throw ex;
-//		}
-//		txManager.commit(status);
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LOGGER.error("commandline", e);
-			shutdownController.shutdownContextWithError(9);
+			shutdownController.shutdownContextWithError(9, e);
 		}
+	}
+
+	@PreDestroy
+	public void onExit() throws IOException, JAXBException, URISyntaxException {
+		LOGGER.warn("Exiting...");
+		long elapsed = contextAllRun.stop();
+		environment.getReport().setTimeAllRun(elapsed / 1_000_000_000.0);
+		reportController.createReport();
 	}
 }
