@@ -9,12 +9,15 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.config.KafkaTopicConfig;
+import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
+import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
 
 @Service
 public class ProductEventMessageProducer {
 	
 	@Autowired
-	public NewTopic productTopic;
+	public KafkaTopicConfig kafkaTopicConfig;
 
 	@Autowired
 	private KafkaTemplate<String, ProductEvent> productTopicKafkaTemplate;
@@ -22,10 +25,11 @@ public class ProductEventMessageProducer {
 	@Autowired
 	public KafkaEnvironment environment;
 
+	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.productTopicName}", description = "All the Products readed by the request."))
 	protected CompletableFuture<SendResult<String,ProductEvent>> sendProductMessage(ProductEvent event) {
 
 //		environment.getReport().setSumEvent(environment.getReport().getSumEvent() + 1);
-		return productTopicKafkaTemplate.send(productTopic.name(), event.getRequestid().toString() /* + "." + event.getId() */,
+		return productTopicKafkaTemplate.send(kafkaTopicConfig.getProductTopicName(), event.getRequestid().toString() /* + "." + event.getId() */,
 				event);
 	}
 
