@@ -1,0 +1,356 @@
+asyncapi: 3.0.0
+info:
+  title: catalog-synchronizer
+  version: 1.0.0
+  description: Catalog Syncronizer with Apache Kafka and Springboot
+  contact:
+    name: csini
+    url: https://github.com/springwolf/springwolf-core
+    email: csini@gmx.com
+  license:
+    name: Apache License 2.0
+  x-generator: springwolf
+defaultContentType: application/json
+servers:
+  kafka-server:
+    host: localhost:9092
+    protocol: kafka
+channels:
+  dbEvents:
+    messages:
+      hu.exercise.spring.kafka.event.DBEvent:
+        $ref: '#/components/messages/hu.exercise.spring.kafka.event.DBEvent'
+  flushed:
+    messages:
+      hu.exercise.spring.kafka.cogroup.Flushed:
+        $ref: '#/components/messages/hu.exercise.spring.kafka.cogroup.Flushed'
+    bindings:
+      kafka:
+        bindingVersion: 0.5.0
+  productEvents:
+    messages:
+      hu.exercise.spring.kafka.event.ProductEvent:
+        $ref: '#/components/messages/hu.exercise.spring.kafka.event.ProductEvent'
+components:
+  schemas:
+    HeadersNotDocumented:
+      type: object
+      properties: {}
+      description: "There can be headers, but they are not explicitly documented."
+      examples:
+        - {}
+    SpringKafkaDefaultHeaders-Flushed:
+      type: object
+      properties:
+        __TypeId__:
+          type: string
+          description: Spring Type Id Header
+          enum:
+            - hu.exercise.spring.kafka.cogroup.Flushed
+          examples:
+            - hu.exercise.spring.kafka.cogroup.Flushed
+      examples:
+        - __TypeId__: hu.exercise.spring.kafka.cogroup.Flushed
+    hu.exercise.spring.kafka.cogroup.Flushed:
+      type: object
+      properties:
+        countDelete:
+          type: integer
+          format: int32
+        countError:
+          type: integer
+          format: int32
+        countInsert:
+          type: integer
+          format: int32
+        countUpdate:
+          type: integer
+          format: int32
+        requestid:
+          type: string
+        sumProcessed:
+          type: integer
+          format: int32
+      examples:
+        - countDelete: 0
+          countError: 0
+          countInsert: 0
+          countUpdate: 0
+          requestid: string
+          sumProcessed: 0
+    hu.exercise.spring.kafka.event.DBEvent:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - INSERT
+            - UPDATE
+            - DELETE
+            - ERROR
+        id:
+          type: string
+        requestid:
+          type: string
+      examples:
+        - action: INSERT
+          id: string
+          requestid: string
+    hu.exercise.spring.kafka.event.ProductEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        product:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.input.Product'
+        requestid:
+          type: string
+          format: uuid
+        source:
+          type: string
+          enum:
+            - DB
+            - TSV
+      examples:
+        - id: string
+          product:
+            Google-defined product category for your product: "371"
+            The URL of your product’s main image: http:// www.example.com/image1.jpg
+            The condition of your product at time of sale: new
+            The demographic for which your product is intended: infant
+            Your product's availability: in_stock
+            Your product's sale price: 15.00 USD
+            Your products price: 15.00 USD
+            Your product’s brand name: Google
+            Your product’s description: "Made from 100% organic cotton, this classic\
+              \ red men’s polo has a slim fit and signature logo embroidered on the\
+              \ left chest. Machine wash cold; imported."
+            Your product’s landing page: http://www.example.com/asp/sp.asp?cat=12&id=1030
+            Your product’s name: Mens Pique Polo Shirt
+            Your product’s unique identifier: A2B4
+            change: true
+            created: 2015-07-20T15:49:04-07:00
+            insert: true
+            new: true
+            run:
+              created: 2015-07-20T15:49:04-07:00
+              filename: string
+              requestid: string
+              updated: 2015-07-20T15:49:04-07:00
+            updated: 2015-07-20T15:49:04-07:00
+          requestid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          source: DB
+    hu.exercise.spring.kafka.input.MonetaryAmount:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: object
+          properties:
+            currencyCode:
+              type: string
+            defaultFractionDigits:
+              type: integer
+              format: int32
+            displayName:
+              type: string
+            numericCode:
+              type: integer
+              format: int32
+            numericCodeAsString:
+              type: string
+            symbol:
+              type: string
+      examples:
+        - 15.00 USD
+    hu.exercise.spring.kafka.input.Product:
+      type: object
+      properties:
+        Google-defined product category for your product:
+          type: string
+          examples:
+            - "371"
+        The URL of your product’s main image:
+          type: string
+          examples:
+            - http:// www.example.com/image1.jpg
+        The condition of your product at time of sale:
+          type: string
+          enum:
+            - NEW
+            - REFURBISHED
+            - USED
+          examples:
+            - new
+        The demographic for which your product is intended:
+          type: string
+          enum:
+            - NEWBORN
+            - INFANT
+            - TODDLER
+            - KIDS
+            - ADULT
+          examples:
+            - infant
+        Your product's availability:
+          type: string
+          enum:
+            - IN_STOCK
+            - OUT_OF_STOCK
+            - PREORDER
+            - BACKORDER
+          examples:
+            - in_stock
+        Your product's sale price:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.input.MonetaryAmount'
+        Your products price:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.input.MonetaryAmount'
+        Your product’s brand name:
+          type: string
+          examples:
+            - Google
+        Your product’s description:
+          type: string
+          examples:
+            - "Made from 100% organic cotton, this classic red men’s polo has a slim\
+              \ fit and signature logo embroidered on the left chest. Machine wash\
+              \ cold; imported."
+        Your product’s landing page:
+          type: string
+          examples:
+            - http://www.example.com/asp/sp.asp?cat=12&id=1030
+        Your product’s name:
+          type: string
+          examples:
+            - Mens Pique Polo Shirt
+        Your product’s unique identifier:
+          type: string
+          examples:
+            - A2B4
+        change:
+          type: boolean
+        created:
+          type: string
+          format: date-time
+        insert:
+          type: boolean
+        new:
+          type: boolean
+        run:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.input.Run'
+        updated:
+          type: string
+          format: date-time
+      examples:
+        - Google-defined product category for your product: "371"
+          The URL of your product’s main image: http:// www.example.com/image1.jpg
+          The condition of your product at time of sale: new
+          The demographic for which your product is intended: infant
+          Your product's availability: in_stock
+          Your product's sale price: 15.00 USD
+          Your products price: 15.00 USD
+          Your product’s brand name: Google
+          Your product’s description: "Made from 100% organic cotton, this classic\
+            \ red men’s polo has a slim fit and signature logo embroidered on the\
+            \ left chest. Machine wash cold; imported."
+          Your product’s landing page: http://www.example.com/asp/sp.asp?cat=12&id=1030
+          Your product’s name: Mens Pique Polo Shirt
+          Your product’s unique identifier: A2B4
+          change: true
+          created: 2015-07-20T15:49:04-07:00
+          insert: true
+          new: true
+          run:
+            created: 2015-07-20T15:49:04-07:00
+            filename: string
+            requestid: string
+            updated: 2015-07-20T15:49:04-07:00
+          updated: 2015-07-20T15:49:04-07:00
+      required:
+        - The URL of your product’s main image
+        - Your product's availability
+        - Your products price
+        - Your product’s description
+        - Your product’s landing page
+        - Your product’s name
+        - Your product’s unique identifier
+    hu.exercise.spring.kafka.input.Run:
+      type: object
+      properties:
+        created:
+          type: string
+          format: date-time
+        filename:
+          type: string
+        requestid:
+          type: string
+        updated:
+          type: string
+          format: date-time
+      examples:
+        - created: 2015-07-20T15:49:04-07:00
+          filename: string
+          requestid: string
+          updated: 2015-07-20T15:49:04-07:00
+  messages:
+    hu.exercise.spring.kafka.cogroup.Flushed:
+      headers:
+        $ref: '#/components/schemas/SpringKafkaDefaultHeaders-Flushed'
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.cogroup.Flushed'
+      name: hu.exercise.spring.kafka.cogroup.Flushed
+      title: Flushed
+      bindings:
+        kafka:
+          bindingVersion: 0.5.0
+    hu.exercise.spring.kafka.event.DBEvent:
+      headers:
+        $ref: '#/components/schemas/HeadersNotDocumented'
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.event.DBEvent'
+      name: hu.exercise.spring.kafka.event.DBEvent
+      title: DBEvent
+      bindings: {}
+    hu.exercise.spring.kafka.event.ProductEvent:
+      headers:
+        $ref: '#/components/schemas/HeadersNotDocumented'
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.event.ProductEvent'
+      name: hu.exercise.spring.kafka.event.ProductEvent
+      title: ProductEvent
+      bindings: {}
+operations:
+  dbEvents_send_sendMessage:
+    action: send
+    channel:
+      $ref: '#/channels/dbEvents'
+    title: dbEvents_send
+    description: All the DB Actions done by the request.
+    bindings: {}
+    messages:
+      - $ref: '#/channels/dbEvents/messages/hu.exercise.spring.kafka.event.DBEvent'
+  flushed_receive_productPairListener:
+    action: receive
+    channel:
+      $ref: '#/channels/flushed'
+    bindings:
+      kafka:
+        bindingVersion: 0.5.0
+    messages:
+      - $ref: '#/channels/flushed/messages/hu.exercise.spring.kafka.cogroup.Flushed'
+  productEvents_send_sendProductMessage:
+    action: send
+    channel:
+      $ref: '#/channels/productEvents'
+    title: productEvents_send
+    description: All the Products readed by the request.
+    bindings: {}
+    messages:
+      - $ref: '#/channels/productEvents/messages/hu.exercise.spring.kafka.event.ProductEvent'

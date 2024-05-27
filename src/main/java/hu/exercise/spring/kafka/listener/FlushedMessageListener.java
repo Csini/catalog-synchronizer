@@ -27,7 +27,7 @@ public class FlushedMessageListener {
 	@Autowired
 	ShutdownController shutdownController;
 
-	@KafkaListener(topics = "#{flushedMessageListenerConfig.topic}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
+	@KafkaListener(topics = "#{kafkaTopicConfig.flushedName}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
 	public void productPairListener(Flushed flushed) {
 		LOGGER.warn("Received flushed message: " + flushed);
 

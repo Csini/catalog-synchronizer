@@ -2,6 +2,8 @@ package hu.exercise.spring.kafka;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -74,10 +76,17 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) {
-		LOGGER.info("args: " + args);
+		Timer timer = metrics.timer("contextAllRun");
+		contextAllRun = timer.time();
+
+		List<String> argsList = Arrays.asList(args);
+		LOGGER.warn("args: " + argsList);
+
+		if (argsList.contains("generating-springwolf-only")) {
+			LOGGER.warn("generating-springwolf-only");
+			return;
+		}
 		try {
-			Timer timer = metrics.timer("contextAllRun");
-			contextAllRun = timer.time();
 
 			// save metadata
 
@@ -89,9 +98,17 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 //
 //		TransactionStatus status = txManager.getTransaction(def);
 
+			if (argsList.isEmpty()) {
+				IllegalArgumentException e = new IllegalArgumentException(
+						"Please run this application with an input filename as the first argument. For example like this: mvn spring-boot:run -Dspring-boot.run.arguments=\"file1.txt\"");
+				LOGGER.error("", e);
+				shutdownController.shutdownContextWithError(3, e);
+				return;
+			}
+
 			Run run = environment.getRun();
-			// TODO args[0]
-			run.setFilename("file2.txt");
+			// args[0]
+			run.setFilename(argsList.get(0));
 
 			runService.saveRun(run);
 			runMessageProducer.sendRunMessage(run);
