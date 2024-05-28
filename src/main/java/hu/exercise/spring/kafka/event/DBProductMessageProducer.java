@@ -5,11 +5,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +17,11 @@ import org.springframework.stereotype.Service;
 import hu.exercise.spring.kafka.KafkaApplication;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
+import hu.exercise.spring.kafka.config.KafkaTopicConfig;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
+import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
+import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
 
 @Service
 public class DBProductMessageProducer extends ProductEventMessageProducer{
@@ -29,7 +29,7 @@ public class DBProductMessageProducer extends ProductEventMessageProducer{
 	private static final Logger LOGGER = LoggerFactory.getLogger(DBProductMessageProducer.class);
 
 	@Autowired
-	public NewTopic readedFromDb;
+	public KafkaTopicConfig kafkaTopicConfig;
 
 	@Autowired
 	private KafkaTemplate<String, ProductEvent> readedFromDbKafkaTemplate;
@@ -55,7 +55,7 @@ public class DBProductMessageProducer extends ProductEventMessageProducer{
 
 						LOGGER.info("sending product to readedFromDb: " + p);
 						ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
-						sendEvent(p, event);
+						sendEvent(event);
 
 //						try {
 							CompletableFuture<SendResult<String, ProductEvent>> sendProductMessage = super.sendProductMessage(event);
@@ -86,14 +86,15 @@ public class DBProductMessageProducer extends ProductEventMessageProducer{
 		}
 	}
 
-	private void sendEvent(Product p, ProductEvent event) {
-		readedFromDbKafkaTemplate.send(readedFromDb.name(), environment.getRequestid() + "." + p.getId(), event);
+	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.readedFromDbName}", description = "All the Product readed from DB."))
+	private void sendEvent(ProductEvent event) {
+		readedFromDbKafkaTemplate.send(kafkaTopicConfig.getReadedFromDbName(), environment.getRequestid() + "." + event.getId(), event);
 	}
 
 	private void backupDB() throws IOException {
 		LOGGER.info("creating DB backup...");
 
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
 		try (InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db")) {
 			Path destination = Paths.get("bkp/productsdb-" + environment.getRequestid() + ".bak");

@@ -1,5 +1,6 @@
 package hu.exercise.spring.kafka.input.tsv;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
@@ -18,6 +19,7 @@ import com.univocity.parsers.tsv.TsvWriterSettings;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.InvalidExample;
+import hu.exercise.spring.kafka.input.MonetaryAmount;
 import hu.exercise.spring.kafka.input.Product;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.ConstraintViolation;
@@ -52,17 +54,36 @@ public class InvalidExamplesHandler {
 		writer = new TsvWriter(settings);
 		// customWriterErrorHandler.setContext(writer.getContext());
 		EasyRandomParameters parameters = new EasyRandomParameters();
-		parameters.excludeType((Class<?> c) -> Currency.class.equals(c));
+//		parameters.excludeType((Class<?> c) -> Currency.class.equals(c));
 //		image_link
 		parameters.randomize(field -> {
 
-			return Math.random() > 0.5 && ("link".equals(field.getName()) || ("image_link".equals(field.getName())));
+			return Math.random() > 0.9 && ("link".equals(field.getName()) || ("image_link".equals(field.getName())));
 		}, () -> "http://random");
-		
+
 		parameters.randomize(field -> {
 
-			return Math.random() > 0.5 && "id".equals(field.getName());
+			return Math.random() > 0.9 && "id".equals(field.getName());
 		}, () -> "12345678910111213141516171819202122232425262728293031323334353637383940");
+		parameters.randomize(field -> {
+			return "price".equals(field.getName()) || ("sale_price".equals(field.getName()));
+		}, () -> {
+			MonetaryAmount amount = new MonetaryAmount();
+			if (Math.random() > 0.9) {
+				amount.setCurrency(Currency.getInstance("HUF"));
+			}
+			if (Math.random() > 0.5) {
+				amount.setAmount(BigDecimal.valueOf(Math.random() * -10_000));
+			} else {
+				amount.setAmount(BigDecimal.valueOf(Math.random() * 10_000));
+			}
+			return amount;
+		});
+		//invalid if NEW
+		parameters.randomize(field -> {
+			return Math.random() > 0.5 && "google_product_category".equals(field.getName());
+		}, () -> "543540");
+
 		generator = new EasyRandom(parameters);
 	}
 

@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.data.domain.Persistable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.univocity.parsers.annotations.Convert;
 import com.univocity.parsers.annotations.EnumOptions;
 import com.univocity.parsers.annotations.Parsed;
@@ -29,6 +30,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -58,7 +60,7 @@ import lombok.Setter;
 public class Product implements Persistable<String> {
 
 	@Id
-	@Schema(name = "Your product’s unique identifier", example = "A2B4")
+	@Schema(description = "Your product’s unique identifier", example = "A2B4")
 	@NotNull(message = "id is required")
 	@Size(max = 50, min = 1, message = "id max 50 character")
 	// Column: ID
@@ -67,59 +69,63 @@ public class Product implements Persistable<String> {
 
 	// TODO izgi Product(id=978-963-9425-95-8,
 
-	@Schema(name = "Your product’s name", example = "Mens Pique Polo Shirt")
+	@Schema(description = "Your product’s name", example = "Mens Pique Polo Shirt")
 	@NotNull(message = "title is required")
 	@Size(max = 150, min = 1, message = "title max 150 character")
 	// Column: Title
 	@Parsed(index = 1, defaultNullRead = "default")
 	private String title;
 
-	@Schema(name = "Your product’s description", example = "Made from 100% organic cotton, this classic red men’s polo has a slim fit and signature logo embroidered on the left chest. Machine wash cold; imported.")
+	@Schema(description = "Your product’s description", example = "Made from 100% organic cotton, this classic red men’s polo has a slim fit and signature logo embroidered on the left chest. Machine wash cold; imported.")
 	@NotNull(message = "description is required")
 	@Size(max = 5000, min = 1, message = "title max 5000 character")
 	// Column: Description
 	@Parsed(index = 2, defaultNullRead = "default")
 	private String description;
 
-	@Schema(name = "Your product's availability", example = "in_stock")
+	@Schema(description = "Your product's availability", example = "in_stock")
 	@NotNull(message = "availability is required")
 	// Column: Availability
 	@Parsed(index = 3)
 	@EnumOptions(customElement = "fromDescription")
 	@Enumerated(EnumType.STRING)
+	@Valid
 	private Availability availability;
 
-	@Schema(name = "The condition of your product at time of sale", example = "new")
+	@Schema(description = "The condition of your product at time of sale", example = "new")
 	// Column: Condition
 	@Parsed(index = 4, defaultNullRead = "NEW")
 	@EnumOptions(customElement = "fromValue")
 	@Enumerated(EnumType.STRING)
+	@Valid
 	private Condition condition;
 
-	@Schema(name = "Your products price", example = "15.00 USD")
+	@Schema(description = "Your products price", example = "15.00 USD")
 	@NotNull(message = "price is required")
 	@Parsed(index = 5)
 	@Convert(conversionClass = MonetaryAmount.class)
 	@AttributeOverrides({ @AttributeOverride(name = "amount", column = @Column(name = "priceAmount")),
 			@AttributeOverride(name = "currency", column = @Column(name = "priceCurrency")) })
 	@Embedded
+	@Valid
 	private MonetaryAmount price;
 
-	@Schema(name = "Your product's sale price", example = "15.00 USD")
+	@Schema(description = "Your product's sale price", example = "15.00 USD")
 	@Parsed(index = 6)
 	@Convert(conversionClass = MonetaryAmount.class)
 	@AttributeOverrides({ @AttributeOverride(name = "amount", column = @Column(name = "salePriceAmount")),
 			@AttributeOverride(name = "currency", column = @Column(name = "salePriceCurrency")) })
 	@Embedded
+	@Valid
 	private MonetaryAmount sale_price;
 
-	@Schema(name = "Your product’s landing page", example = "http://www.example.com/asp/sp.asp?cat=12&id=1030")
+	@Schema(description = "Your product’s landing page", example = "http://www.example.com/asp/sp.asp?cat=12&id=1030")
 	@NotNull(message = "link is required")
 	@URL(regexp = "^(http|https).*")
 	@Parsed(index = 7)
 	private String link;
 
-	@Schema(name = "Your product’s brand name", example = "Google")
+	@Schema(description = "Your product’s brand name", example = "Google")
 	@Size(max = 70, message = "brand max 70 character")
 	@Parsed(index = 8)
 	private String brand;
@@ -132,16 +138,17 @@ public class Product implements Persistable<String> {
 		return !StringUtils.isEmpty(brand);
 	}
 
-	@Schema(name = "The URL of your product’s main image", example = "http:// www.example.com/image1.jpg")
+	@Schema(description = "The URL of your product’s main image", example = "http:// www.example.com/image1.jpg")
 	@NotNull(message = "image_link is required")
 	@URL(regexp = "^(http|https).*")
 	@Parsed(index = 9)
 	private String image_link;
 
-	@Schema(name = "The demographic for which your product is intended", example = "infant")
+	@Schema(description = "The demographic for which your product is intended", example = "infant")
 	@Parsed(index = 10)
 	@EnumOptions(customElement = "fromValue")
 	@Enumerated(EnumType.STRING)
+	@Valid
 	private AgeGroup age_group;
 
 	@AssertTrue(message = "age_group is required for Apparel & Accessories products")
@@ -155,7 +162,7 @@ public class Product implements Persistable<String> {
 		return null == age_group;
 	}
 
-	@Schema(name = "Google-defined product category for your product", example = "371")
+	@Schema(description = "Google-defined product category for your product", example = "371")
 	@Parsed(index = 11)
 	private String google_product_category;
 
@@ -210,14 +217,14 @@ public class Product implements Persistable<String> {
 						Object newValue = newField.get(newObject);
 //						System.out.println("changed? "+ field.getName() + " " + value +" -> " + newValue);
 
-						if (value == null && newValue!=null) {
+						if (value == null && newValue != null) {
 
 							if (!"run".equals(field.getName()) && !"created".equals(field.getName())
 									&& !"updated".equals(field.getName())) {
 								this.change = true;
 							}
 						}
-						
+
 						if (value != null && !value.equals(newValue)) {
 
 							if (!"run".equals(field.getName()) && !"created".equals(field.getName())
@@ -244,6 +251,7 @@ public class Product implements Persistable<String> {
 	@Transient
 	private boolean insert;
 
+	@JsonIgnore
 	@Override
 	public boolean isNew() {
 		return this.insert;
@@ -252,4 +260,15 @@ public class Product implements Persistable<String> {
 	public void setNew(boolean insert) {
 		this.insert = insert;
 	}
+
+	@JsonIgnore
+	public boolean isChange() {
+		return change;
+	}
+
+	@JsonIgnore
+	public boolean isInsert() {
+		return insert;
+	}
+
 }

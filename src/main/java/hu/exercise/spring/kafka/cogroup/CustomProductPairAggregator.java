@@ -79,7 +79,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		context.schedule(Duration.ofSeconds(240), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
 //		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
 //		context.schedule(Duration.ofSeconds(this.aggregateWindowInSec), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
-//		context.schedule(Duration.ofSeconds(90), PunctuationType.STREAM_TIME, time -> flushStore());
+//		context.schedule(Duration.ofMinutes(1), PunctuationType.STREAM_TIME, time -> flushStore());
 		store = context.getStateStore(stateStoreName);
 		
 		this.contextProcessing = timerProcessing.time();
@@ -128,8 +128,14 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		}
 //		LOGGER.warn("putting(" + id + "): " + oldValue);
 		store.put(id, oldValue);
-
-		if (processCounter >= environment.getReport().getSumReaded()) {
+		
+		long toBeProcessed = environment.getReport().getSumReaded()-environment.getReport().getCountReadedFromTsvInvalid();
+		
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
+		}
+		
+		if (processCounter >= toBeProcessed) {
 			environment.getReport().setSumEvent(eventCounter);
 //			flushStoreBatched();
 			flushStore();

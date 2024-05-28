@@ -15,7 +15,6 @@ import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.event.InvalidMessageProducer;
 import hu.exercise.spring.kafka.event.ProductErrorEvent;
 import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.ProductEventMessageProducer;
 import hu.exercise.spring.kafka.event.Source;
 import hu.exercise.spring.kafka.event.ValidMessageProducer;
 import hu.exercise.spring.kafka.input.Product;

@@ -13,30 +13,35 @@ import org.springframework.kafka.core.KafkaAdmin;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Action;
+import lombok.Getter;
 
 @Configuration
+@Getter
 public class KafkaTopicConfig {
 
 	@Value(value = "${spring.kafka.bootstrap-servers}")
 	private String bootstrapAddress;
 
 	@Value(value = "${readedFromDb.topic.name}")
-	private String readedFromDb;
+	private String readedFromDbName;
 
 	@Value(value = "${validProduct.topic.name}")
-	private String validProduct;
+	private String validProductName;
 
 	@Value(value = "${invalidProduct.topic.name}")
-	private String invalidProduct;
+	private String invalidProductName;
 
 	@Value(value = "${flushed.topic.name}")
-	private String flushed;
+	private String flushedName;
 
 	@Value(value = "${product.topic.name}")
-	private String productTopic;
+	private String productTopicName;
 	
 	@Value(value = "${dbevent.topic.name}")
-	private String dbEventTopic;
+	private String dbEventTopicName;
+	
+	@Value(value = "${runs.topic.name}")
+	private String runsTopicName;
 
 	@Autowired
 	public KafkaEnvironment environment;
@@ -54,37 +59,37 @@ public class KafkaTopicConfig {
 
 	@Bean
 	public NewTopic readedFromDb() {
-		return new NewTopic(readedFromDb, 1, (short) 1);
+		return new NewTopic(readedFromDbName, 1, (short) 1);
 	}
 
 	@Bean
 	public NewTopic validProduct() {
-		return new NewTopic(validProduct, 1, (short) 1);
+		return new NewTopic(validProductName, 1, (short) 1);
 	}
 
 	@Bean
 	public NewTopic invalidProduct() {
-		return new NewTopic(invalidProduct, 1, (short) 1);
+		return new NewTopic(invalidProductName, 1, (short) 1);
 	}
 
 	@Bean
 	public NewTopic flushed() {
-		return new NewTopic(flushed, 1, (short) 1);
+		return new NewTopic(flushedName, 1, (short) 1);
 	}
 
 	@Bean
 	public NewTopic productTopic() {
-		return new NewTopic(productTopic, 1, (short) 1);
+		return new NewTopic(productTopicName, 1, (short) 1);
 	}
 	
 	@Bean
 	public NewTopic dbEventTopic() {
-		return new NewTopic(dbEventTopic, 1, (short) 1);
+		return new NewTopic(dbEventTopicName, 1, (short) 1);
 	}
 
 	@Bean
 	public NewTopic runs() {
-		return new NewTopic("runs", 1, (short) 1);
+		return new NewTopic(runsTopicName, 1, (short) 1);
 	}
-
+	
 }

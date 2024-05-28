@@ -25,7 +25,7 @@
      <logger name="hu.exercise.spring.kafka.event" level="warn" />
      <logger name="org.springframework.transaction.interceptor" level="warn" />
      
-     
+     <logger name="io.github.springwolf" level="info" />
      <logger name="net.ttddyy.dsproxy.listener" level="warn" />
      
      <logger name="org.apache.kafka.streams.KafkaStreams" level="debug" />
