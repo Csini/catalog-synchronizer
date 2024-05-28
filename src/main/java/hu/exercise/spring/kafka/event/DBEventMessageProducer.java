@@ -2,7 +2,6 @@ package hu.exercise.spring.kafka.event;
 
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
