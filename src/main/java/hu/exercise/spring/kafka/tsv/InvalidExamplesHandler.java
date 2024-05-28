@@ -1,4 +1,4 @@
-package hu.exercise.spring.kafka.input.tsv;
+package hu.exercise.spring.kafka.tsv;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -79,10 +79,13 @@ public class InvalidExamplesHandler {
 			}
 			return amount;
 		});
-		//invalid if NEW
+		// invalid if NEW
 		parameters.randomize(field -> {
 			return Math.random() > 0.5 && "google_product_category".equals(field.getName());
-		}, () -> "543540");
+		}, () -> "166");
+		parameters.randomize(field -> {
+			return Math.random() > 0.5 && "google_product_category".equals(field.getName());
+		}, () -> "12345");
 
 		generator = new EasyRandom(parameters);
 	}

@@ -12,8 +12,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.RunMessageProducer;
 import hu.exercise.spring.kafka.input.Run;
-import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 import hu.exercise.spring.kafka.service.RunService;
+import hu.exercise.spring.kafka.tsv.TSVHandler;
 
 @SpringBootApplication
 public class KafkaApplication {

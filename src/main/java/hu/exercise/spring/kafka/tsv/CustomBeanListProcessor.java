@@ -1,4 +1,4 @@
-package hu.exercise.spring.kafka.input.tsv;
+package hu.exercise.spring.kafka.tsv;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,18 +18,16 @@ import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.event.Source;
 import hu.exercise.spring.kafka.event.ValidMessageProducer;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.input.ProductValidator;
 import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
 
 @Service
 public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CustomBeanListProcessor.class);
 
-	private ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-	private Validator validator = factory.getValidator();
+	@Autowired
+	ProductValidator productValidator;
 
 //	@Autowired
 //	private ProductRepository repository;
@@ -70,7 +68,7 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 		bean.setRun(environment.getRun());
 
-		Set<ConstraintViolation<Product>> violations = validator.validate(bean);
+		Set<ConstraintViolation<Product>> violations = productValidator.validate(bean);
 
 		counter++;
 

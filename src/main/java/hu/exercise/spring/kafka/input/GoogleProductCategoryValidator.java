@@ -1,28 +1,37 @@
 package hu.exercise.spring.kafka.input;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import org.grep4j.core.Grep4j;
-import org.grep4j.core.model.Profile;
-import org.grep4j.core.model.ProfileBuilder;
-import org.grep4j.core.result.GrepResults;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GoogleProductCategoryValidator {
-	
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(GoogleProductCategoryValidator.class);
+
 	private static final Map<String, Boolean> cache = new HashMap<>();
 
-	private static Profile localProfile = ProfileBuilder.newBuilder().name("taxonomy-with-ids.en-US.txt").filePath(".")
-			.onLocalhost().build();
-
-	public static boolean isValid(String google_product_category) {
-		if(cache.containsKey(google_product_category)) {
+	public static boolean isValid(String google_product_category) throws IOException, URISyntaxException {
+		if (cache.containsKey(google_product_category)) {
 			return cache.get(google_product_category);
 		}
-		GrepResults results = Grep4j.grep(Grep4j.constantExpression(google_product_category), localProfile);
-		boolean found = !results.isEmpty();
-		cache.put(google_product_category, found);
-		return found;
+		try (Stream<String> stream = Files.lines(
+				Path.of(GoogleProductCategoryValidator.class.getResource("/taxonomy-with-ids.en-US.txt").toURI()))) {
+
+			boolean found = stream.filter(str -> str.startsWith(google_product_category + " - ")).findFirst()
+					.isPresent();
+
+			cache.put(google_product_category, found);
+			return found;
+
+		}
 	}
 
 }

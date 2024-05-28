@@ -1,10 +1,8 @@
-package hu.exercise.spring.kafka.input.tsv;
+package hu.exercise.spring.kafka.tsv;
 
 import java.io.FileNotFoundException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.io.Charsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +13,6 @@ import com.univocity.parsers.tsv.TsvParserSettings;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
-import hu.exercise.spring.kafka.init.CreateTopicsSpringApplication;
 import jakarta.annotation.PostConstruct;
 
 @Service

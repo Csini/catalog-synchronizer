@@ -1,4 +1,4 @@
-package hu.exercise.spring.kafka.input.tsv;
+package hu.exercise.spring.kafka.tsv;
 
 import java.util.Arrays;
 
