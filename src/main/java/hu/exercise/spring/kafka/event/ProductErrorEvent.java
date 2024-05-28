@@ -2,6 +2,9 @@ package hu.exercise.spring.kafka.event;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import hu.exercise.spring.kafka.input.Product;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,5 +28,12 @@ public class ProductErrorEvent {
 	}
 
 	private Product product;
+
 	private Throwable error;
+
+	@JsonIgnore
+	public Throwable getError() {
+		return error;
+	}
+	
 }

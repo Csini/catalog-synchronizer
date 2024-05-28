@@ -31,6 +31,10 @@ channels:
     messages:
       hu.exercise.spring.kafka.event.ProductEvent:
         $ref: '#/components/messages/hu.exercise.spring.kafka.event.ProductEvent'
+  runs:
+    messages:
+      hu.exercise.spring.kafka.input.Run:
+        $ref: '#/components/messages/hu.exercise.spring.kafka.input.Run'
 components:
   schemas:
     HeadersNotDocumented:
@@ -128,14 +132,11 @@ components:
             Your product’s landing page: http://www.example.com/asp/sp.asp?cat=12&id=1030
             Your product’s name: Mens Pique Polo Shirt
             Your product’s unique identifier: A2B4
-            change: true
             created: 2015-07-20T15:49:04-07:00
-            insert: true
-            new: true
             run:
+              Name of the Input File for this run.: file4.txt
+              Run's unique identifier: a3dbaa5a-1375-491e-8c21-403864de8779
               created: 2015-07-20T15:49:04-07:00
-              filename: string
-              requestid: string
               updated: 2015-07-20T15:49:04-07:00
             updated: 2015-07-20T15:49:04-07:00
           requestid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -228,15 +229,9 @@ components:
           type: string
           examples:
             - A2B4
-        change:
-          type: boolean
         created:
           type: string
           format: date-time
-        insert:
-          type: boolean
-        new:
-          type: boolean
         run:
           $ref: '#/components/schemas/hu.exercise.spring.kafka.input.Run'
         updated:
@@ -257,14 +252,11 @@ components:
           Your product’s landing page: http://www.example.com/asp/sp.asp?cat=12&id=1030
           Your product’s name: Mens Pique Polo Shirt
           Your product’s unique identifier: A2B4
-          change: true
           created: 2015-07-20T15:49:04-07:00
-          insert: true
-          new: true
           run:
+            Name of the Input File for this run.: file4.txt
+            Run's unique identifier: a3dbaa5a-1375-491e-8c21-403864de8779
             created: 2015-07-20T15:49:04-07:00
-            filename: string
-            requestid: string
             updated: 2015-07-20T15:49:04-07:00
           updated: 2015-07-20T15:49:04-07:00
       required:
@@ -278,20 +270,24 @@ components:
     hu.exercise.spring.kafka.input.Run:
       type: object
       properties:
+        Name of the Input File for this run.:
+          type: string
+          examples:
+            - file4.txt
+        Run's unique identifier:
+          type: string
+          examples:
+            - a3dbaa5a-1375-491e-8c21-403864de8779
         created:
           type: string
           format: date-time
-        filename:
-          type: string
-        requestid:
-          type: string
         updated:
           type: string
           format: date-time
       examples:
-        - created: 2015-07-20T15:49:04-07:00
-          filename: string
-          requestid: string
+        - Name of the Input File for this run.: file4.txt
+          Run's unique identifier: a3dbaa5a-1375-491e-8c21-403864de8779
+          created: 2015-07-20T15:49:04-07:00
           updated: 2015-07-20T15:49:04-07:00
   messages:
     hu.exercise.spring.kafka.cogroup.Flushed:
@@ -326,6 +322,16 @@ components:
       name: hu.exercise.spring.kafka.event.ProductEvent
       title: ProductEvent
       bindings: {}
+    hu.exercise.spring.kafka.input.Run:
+      headers:
+        $ref: '#/components/schemas/HeadersNotDocumented'
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          $ref: '#/components/schemas/hu.exercise.spring.kafka.input.Run'
+      name: hu.exercise.spring.kafka.input.Run
+      title: Run
+      bindings: {}
 operations:
   dbEvents_send_sendMessage:
     action: send
@@ -354,3 +360,12 @@ operations:
     bindings: {}
     messages:
       - $ref: '#/channels/productEvents/messages/hu.exercise.spring.kafka.event.ProductEvent'
+  runs_send_sendRunMessage:
+    action: send
+    channel:
+      $ref: '#/channels/runs'
+    title: runs_send
+    description: All the Runs started from catalog-syncronizer.
+    bindings: {}
+    messages:
+      - $ref: '#/channels/runs/messages/hu.exercise.spring.kafka.input.Run'

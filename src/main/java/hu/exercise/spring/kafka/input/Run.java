@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,8 +33,10 @@ public class Run {
 
 	@Id
 	//@GeneratedValue(strategy = GenerationType.UUID)
+	@Schema(name = "Run's unique identifier", example = "a3dbaa5a-1375-491e-8c21-403864de8779")
 	private String requestid = UUID.randomUUID().toString();
 
+	@Schema(name = "Name of the Input File for this run.", example = "file4.txt")
 	private String filename;
 
 	@CreationTimestamp

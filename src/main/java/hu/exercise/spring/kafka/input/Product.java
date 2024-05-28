@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.data.domain.Persistable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.univocity.parsers.annotations.Convert;
 import com.univocity.parsers.annotations.EnumOptions;
 import com.univocity.parsers.annotations.Parsed;
@@ -29,6 +30,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -87,6 +89,7 @@ public class Product implements Persistable<String> {
 	@Parsed(index = 3)
 	@EnumOptions(customElement = "fromDescription")
 	@Enumerated(EnumType.STRING)
+	@Valid
 	private Availability availability;
 
 	@Schema(name = "The condition of your product at time of sale", example = "new")
@@ -94,6 +97,7 @@ public class Product implements Persistable<String> {
 	@Parsed(index = 4, defaultNullRead = "NEW")
 	@EnumOptions(customElement = "fromValue")
 	@Enumerated(EnumType.STRING)
+	@Valid
 	private Condition condition;
 
 	@Schema(name = "Your products price", example = "15.00 USD")
@@ -103,6 +107,7 @@ public class Product implements Persistable<String> {
 	@AttributeOverrides({ @AttributeOverride(name = "amount", column = @Column(name = "priceAmount")),
 			@AttributeOverride(name = "currency", column = @Column(name = "priceCurrency")) })
 	@Embedded
+	@Valid
 	private MonetaryAmount price;
 
 	@Schema(name = "Your product's sale price", example = "15.00 USD")
@@ -111,6 +116,7 @@ public class Product implements Persistable<String> {
 	@AttributeOverrides({ @AttributeOverride(name = "amount", column = @Column(name = "salePriceAmount")),
 			@AttributeOverride(name = "currency", column = @Column(name = "salePriceCurrency")) })
 	@Embedded
+	@Valid
 	private MonetaryAmount sale_price;
 
 	@Schema(name = "Your product’s landing page", example = "http://www.example.com/asp/sp.asp?cat=12&id=1030")
@@ -142,6 +148,7 @@ public class Product implements Persistable<String> {
 	@Parsed(index = 10)
 	@EnumOptions(customElement = "fromValue")
 	@Enumerated(EnumType.STRING)
+	@Valid
 	private AgeGroup age_group;
 
 	@AssertTrue(message = "age_group is required for Apparel & Accessories products")
@@ -210,14 +217,14 @@ public class Product implements Persistable<String> {
 						Object newValue = newField.get(newObject);
 //						System.out.println("changed? "+ field.getName() + " " + value +" -> " + newValue);
 
-						if (value == null && newValue!=null) {
+						if (value == null && newValue != null) {
 
 							if (!"run".equals(field.getName()) && !"created".equals(field.getName())
 									&& !"updated".equals(field.getName())) {
 								this.change = true;
 							}
 						}
-						
+
 						if (value != null && !value.equals(newValue)) {
 
 							if (!"run".equals(field.getName()) && !"created".equals(field.getName())
@@ -244,6 +251,7 @@ public class Product implements Persistable<String> {
 	@Transient
 	private boolean insert;
 
+	@JsonIgnore
 	@Override
 	public boolean isNew() {
 		return this.insert;
@@ -252,4 +260,15 @@ public class Product implements Persistable<String> {
 	public void setNew(boolean insert) {
 		this.insert = insert;
 	}
+
+	@JsonIgnore
+	public boolean isChange() {
+		return change;
+	}
+
+	@JsonIgnore
+	public boolean isInsert() {
+		return insert;
+	}
+
 }

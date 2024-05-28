@@ -5,6 +5,8 @@ import java.util.Currency;
 
 import com.univocity.parsers.conversions.Conversion;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,9 +14,11 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class MonetaryAmount implements Conversion<String, MonetaryAmount> {
 
+	@PositiveOrZero
 	private BigDecimal amount;
 
 	// ISO 4217
+	@NotNull(message = "currency is required")
 	private Currency currency;
 
 	@Override

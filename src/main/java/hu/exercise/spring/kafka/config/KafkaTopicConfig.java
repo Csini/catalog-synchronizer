@@ -39,6 +39,9 @@ public class KafkaTopicConfig {
 	
 	@Value(value = "${dbevent.topic.name}")
 	private String dbEventTopicName;
+	
+	@Value(value = "${runs.topic.name}")
+	private String runsTopicName;
 
 	@Autowired
 	public KafkaEnvironment environment;
@@ -86,7 +89,7 @@ public class KafkaTopicConfig {
 
 	@Bean
 	public NewTopic runs() {
-		return new NewTopic("runs", 1, (short) 1);
+		return new NewTopic(runsTopicName, 1, (short) 1);
 	}
 	
 }
