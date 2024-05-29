@@ -29,9 +29,6 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 	@Autowired
 	ProductValidator productValidator;
 
-//	@Autowired
-//	private ProductRepository repository;
-
 	@Autowired
 	private ValidMessageProducer validMessageProducer;
 
@@ -47,24 +44,8 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 		super(Product.class);
 	}
 
-//	@Override
-//	public Product createBean(String[] row, Context context) {
-//		try {
-//			return super.createBean(row, context);
-//		} catch (Exception e) {
-//			LOGGER.error("at " + row, e);
-//			// TODO send to invalid topic
-//
-//			// TODO
-//			return null;
-//		}
-//	}
-
 	@Override
 	public void beanProcessed(Product bean, ParsingContext context) {
-
-		// TODO
-		// LOGGER.info(bean.toString());
 
 		bean.setRun(environment.getRun());
 
@@ -74,26 +55,19 @@ public class CustomBeanListProcessor extends BeanListProcessor<Product> {
 
 		if (violations.isEmpty()) {
 
-//			repository.save(bean);
-
 			// send to valid topic
 			ProductEvent productEvent = new ProductEvent(bean.getId(), environment.getRequestid(), Source.TSV, bean);
 			validMessageProducer.sendEvent(productEvent);
 
 		} else {
-			LOGGER.error("at " + bean.getId(), violations);
 			// send to invalid topic
-			// TODO
 			String violationtext = violations.stream()
 					.map(v -> v.getPropertyPath() + ": " + v.getInvalidValue() + " - " + v.getMessage())
 					.collect(Collectors.joining(","));
+			LOGGER.error("at " + bean.getId() + ": " + violationtext);
 			ProductErrorEvent productErrorEvent = new ProductErrorEvent(environment.getRequestid(), bean.getId(), bean,
 					new IllegalArgumentException(violationtext));
 			invalidMessageProducer.sendEvent(productErrorEvent);
-
-//			for (ConstraintViolation<Product> violation : violations) {
-//				LOGGER.error(violation.getMessage());
-//			}
 
 		}
 	}

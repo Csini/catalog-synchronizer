@@ -207,8 +207,9 @@ public class Report {
 				testcase.setSkipped(skipped);
 				Set<ConstraintViolation<Product>> violations = example.getViolations();
 
-				skipped.setMessage(
-						violations.stream().map(v ->  v.getPropertyPath() +": " + v.getInvalidValue() + " - " +v.getMessage()).collect(Collectors.joining("\n")));
+				skipped.setMessage(violations.stream()
+						.map(v -> v.getPropertyPath() + ": " + v.getInvalidValue() + " - " + v.getMessage())
+						.collect(Collectors.joining("\n")));
 
 				testsuite.getTestcase().add(testcase);
 			});
@@ -241,6 +242,10 @@ public class Report {
 		System.out.print(
 				"[" + String.format("%-100s", sb.toString()) + "] " + i + "% (" + run.getRequestid() + ")" + "\r");
 		return i;
+	}
+
+	public long getSumToBeProcessed() {
+		return getSumReaded() - getCountReadedFromTsvInvalid();
 	}
 
 }

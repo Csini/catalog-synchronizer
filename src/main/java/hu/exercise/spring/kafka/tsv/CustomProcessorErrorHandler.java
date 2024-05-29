@@ -34,7 +34,6 @@ public class CustomProcessorErrorHandler implements ProcessorErrorHandler<Contex
 		LOGGER.error("Processing ERROR at line " + context.currentRecord() + " column " + context.currentColumn()
 				+ " : " + error.getMessage());
 		// send to invalid topic
-		// TODO
 		ProductErrorEvent productErrorEvent = new ProductErrorEvent(environment.getRequestid(),
 				(inputRow == null || inputRow.length < 1) ? null : "" + Arrays.asList(inputRow), null, error);
 		invalidMessageProducer.sendEvent(productErrorEvent);

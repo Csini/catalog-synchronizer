@@ -1,14 +1,19 @@
 spring:
   kafka:
-    consumer:
-      auto-offset-reset: earliest
-      group-id: baeldung
-test:
-  topic: embedded-test-topic
-
-monitor:
-  kafka:
-    bootstrap:
-      config: "PLAINTEXT://localhost:9085"
-    consumer:
-      groupid: "baeldungGrp"
+    streams:
+      auto-startup: false
+    bootstrap-servers : ${spring.embedded.kafka.brokers}
+aggregateWindowInSec: 0
+flushSize: 1000
+store:
+  name:
+    productPair: productPairStore
+topic:
+  name:
+    readedFromDb: readedFromDb
+    validProduct: validProduct
+    invalidProduct: invalidProduct
+    flushed: flushed
+    product: productEvents
+    dbevent: dbEvents
+    runs: runs

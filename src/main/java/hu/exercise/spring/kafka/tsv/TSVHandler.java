@@ -53,7 +53,6 @@ public class TSVHandler {
 		parser.parse(TSVHandler.class.getResourceAsStream("/input/" + environment.getFilename()),
 				StandardCharsets.UTF_8);
 
-//		report.setCountReadedFromTsv(customBeanListProcessor.getCounter());
 		long line = parser.getContext().currentLine();
 		if (line >= 2) {
 			// header row and it is after the last row

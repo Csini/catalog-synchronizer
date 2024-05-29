@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.hibernate.cfg.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +18,7 @@ import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.event.DBEvent;
 import hu.exercise.spring.kafka.event.ProductErrorEvent;
 import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.input.*;
+import hu.exercise.spring.kafka.input.Run;
 
 @Configuration
 public class KafkaProducerConfig {

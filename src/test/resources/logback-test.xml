@@ -7,8 +7,10 @@
 			<charset>utf8</charset>
 		</encoder>
 	</appender>
+	
+	 <logger name="hu.exercise.spring.kafka" level="debug" />
 
-	<root level="INFO">
+	<root level="warn">
 		<appender-ref ref="STDOUT" />
 	</root>
 

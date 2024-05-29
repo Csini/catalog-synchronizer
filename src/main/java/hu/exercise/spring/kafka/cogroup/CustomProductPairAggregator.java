@@ -125,7 +125,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		LOGGER.warn("putting(" + id + "): " + oldValue);
 		store.put(id, oldValue);
 		
-		long toBeProcessed = environment.getReport().getSumReaded()-environment.getReport().getCountReadedFromTsvInvalid();
+		long toBeProcessed = environment.getReport().getSumToBeProcessed();
 		
 		if(LOGGER.isDebugEnabled()) {
 			LOGGER.debug("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);

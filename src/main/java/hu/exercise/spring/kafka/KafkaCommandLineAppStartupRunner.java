@@ -164,7 +164,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			}
 
 			streamsConfig.productRollupStream();
-
+			
 			factory.setCleanupConfig(new CleanupConfig(true, false));
 			factory.setStreamsUncaughtExceptionHandler(ex -> {
 				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
@@ -174,6 +174,9 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			});
 			factory.start();
 			environment.getReport().printProgressbar();
+			
+			//System.out.println(factory.getTopology().describe().toString());
+			
 
 		} catch (Throwable e) {
 			LOGGER.error("commandline", e);
