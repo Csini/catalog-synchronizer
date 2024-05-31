@@ -1,6 +1,8 @@
 package hu.exercise.spring.kafka.input;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URISyntaxException;
 import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
@@ -159,7 +161,7 @@ public class Product implements Persistable<String> {
 		if (!"166".equals(google_product_category) && !google_product_category.contains("Apparel & Accessories")) {
 			return true;
 		}
-		return null == age_group;
+		return null != age_group;
 	}
 
 	@Schema(description = "Google-defined product category for your product", example = "371")
@@ -167,7 +169,7 @@ public class Product implements Persistable<String> {
 	private String google_product_category;
 
 	@AssertTrue(message = "google_product_category should be in the list")
-	private boolean isGoogleProductCategoryValid() {
+	private boolean isGoogleProductCategoryValid() throws IOException, URISyntaxException {
 		if (StringUtils.isEmpty(google_product_category)) {
 			return true;
 		}

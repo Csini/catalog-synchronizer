@@ -25,9 +25,9 @@ import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
 import hu.exercise.spring.kafka.event.DBProductMessageProducer;
 import hu.exercise.spring.kafka.event.RunMessageProducer;
 import hu.exercise.spring.kafka.input.Run;
-import hu.exercise.spring.kafka.input.tsv.InvalidExamplesHandler;
-import hu.exercise.spring.kafka.input.tsv.TSVHandler;
 import hu.exercise.spring.kafka.service.RunService;
+import hu.exercise.spring.kafka.tsv.InvalidExamplesHandler;
+import hu.exercise.spring.kafka.tsv.TSVHandler;
 import jakarta.annotation.PreDestroy;
 import jakarta.xml.bind.JAXBException;
 
@@ -163,8 +163,9 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			while (!service.awaitTermination(100, TimeUnit.MILLISECONDS)) {
 			}
 
-			streamsConfig.productRollupStream();
-
+//			streamsConfig.addStateStore();
+//			streamsConfig.productRollupStream();
+			
 			factory.setCleanupConfig(new CleanupConfig(true, false));
 			factory.setStreamsUncaughtExceptionHandler(ex -> {
 				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
@@ -174,6 +175,12 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			});
 			factory.start();
 			environment.getReport().printProgressbar();
+			
+			while (!factory.isRunning()) {
+			}
+			
+			//System.out.println(factory.getTopology().describe().toString());
+			
 
 		} catch (Throwable e) {
 			LOGGER.error("commandline", e);

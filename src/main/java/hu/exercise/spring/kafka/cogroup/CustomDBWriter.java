@@ -162,6 +162,7 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 //		store.
 //		txManager.commit(this.status);
 		LOGGER.info("flushCounter: " + flushCounter);
+		flushCounter = 0;
 	}
 
 }

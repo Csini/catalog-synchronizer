@@ -1,15 +1,12 @@
 package hu.exercise.spring.kafka.cogroup;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -17,7 +14,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.processor.PunctuationType;
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
@@ -56,15 +52,15 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	private int flushSize;
 
 	private int flushedItemCounter = 0;
-	
+
 	private int eventCounter = 0;
-	
+
 	private Timer.Context contextProcessing;
-	
+
 	private Timer timerProcessing;
 
-	public CustomProductPairAggregator( MetricRegistry metrics, int aggregateWindowInSec, int flushSize, String stateStoreName,
-			KafkaEnvironment environment) {
+	public CustomProductPairAggregator(MetricRegistry metrics, int aggregateWindowInSec, int flushSize,
+			String stateStoreName, KafkaEnvironment environment) {
 		super();
 		this.stateStoreName = stateStoreName;
 		this.environment = environment;
@@ -81,8 +77,14 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		context.schedule(Duration.ofSeconds(this.aggregateWindowInSec), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
 //		context.schedule(Duration.ofMinutes(1), PunctuationType.STREAM_TIME, time -> flushStore());
 		store = context.getStateStore(stateStoreName);
-		
+
 		this.contextProcessing = timerProcessing.time();
+		
+		processCounter = 0;
+		flushCounter = 0;
+		foundCounter = 0;
+		flushedItemCounter = 0;
+		eventCounter = 0;
 	}
 
 	@Override
@@ -128,13 +130,13 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		}
 //		LOGGER.warn("putting(" + id + "): " + oldValue);
 		store.put(id, oldValue);
-		
-		long toBeProcessed = environment.getReport().getSumReaded()-environment.getReport().getCountReadedFromTsvInvalid();
-		
-		if(LOGGER.isDebugEnabled()) {
+
+		long toBeProcessed = environment.getReport().getSumToBeProcessed();
+
+		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
 		}
-		
+
 		if (processCounter >= toBeProcessed) {
 			environment.getReport().setSumEvent(eventCounter);
 //			flushStoreBatched();
@@ -171,7 +173,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	}
 
 	private void flushStoreBatched() {
-		LOGGER.warn("flushStoreBatched");;
+		LOGGER.warn("flushStoreBatched");
+		;
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
 			Stream<KeyValue<String, ProductPair>> stream = KafkaUtils.getStreamFromIterator(it);
@@ -267,7 +270,13 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		LOGGER.info("processCounter: " + processCounter);
 
 		LOGGER.warn("foundCounter: " + foundCounter);
-		this.environment.getReport().setTimerProcessing(contextProcessing.stop()/1_000_000_000.0);
+		this.environment.getReport().setTimerProcessing(contextProcessing.stop() / 1_000_000_000.0);
+
+		processCounter = 0;
+		flushCounter = 0;
+		foundCounter = 0;
+		flushedItemCounter = 0;
+		eventCounter = 0;
 	}
 
 }

@@ -4,20 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
-import hu.exercise.spring.kafka.cogroup.Report;
-import hu.exercise.spring.kafka.output.Error;
-import hu.exercise.spring.kafka.output.Failure;
-import hu.exercise.spring.kafka.output.ObjectFactory;
-import hu.exercise.spring.kafka.output.Properties;
-import hu.exercise.spring.kafka.output.Property;
-import hu.exercise.spring.kafka.output.Testcase;
-import hu.exercise.spring.kafka.output.Testsuite;
 import hu.exercise.spring.kafka.output.Testsuites;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
@@ -39,24 +30,6 @@ public class KafkaReportController {
 
 	}
 
-//	public void createErrorReport(int errorCode, Throwable e) throws IOException, JAXBException, URISyntaxException {
-//
-//		{
-//			Testsuite testsuite = objectFactory.createTestsuite();
-//			testsuites.getTestsuite().add(testsuite);
-//			testsuite.setName("ERROR");
-//
-//			Testcase testcase = objectFactory.createTestcase();
-//			testsuite.getTestcase().add(testcase);
-//			Error error = objectFactory.createError();
-//			error.setContent(ExceptionUtils.getStackTrace(e));
-//			error.setMessage(e.getMessage());
-//			testcase.getError().add(error);
-//		}
-//
-//		writeFile(testsuites);
-//	}
-
 	private void writeFile(Testsuites testsuites) throws URISyntaxException, IOException, JAXBException {
 
 		String reportfilename = "report-" + environment.getRequestid() + ".xml";
@@ -71,10 +44,4 @@ public class KafkaReportController {
 		jaxbMarshaller.marshal(testsuites, file);
 	}
 
-//	private void addProperty(Properties testsuiteProperties, String name, String value) {
-//		Property property = objectFactory.createProperty();
-//		testsuiteProperties.getProperty().add(property);
-//		property.setName(name);
-//		property.setValue(value);
-//	}
 }
