@@ -52,15 +52,15 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	private int flushSize;
 
 	private int flushedItemCounter = 0;
-	
+
 	private int eventCounter = 0;
-	
+
 	private Timer.Context contextProcessing;
-	
+
 	private Timer timerProcessing;
 
-	public CustomProductPairAggregator( MetricRegistry metrics, int aggregateWindowInSec, int flushSize, String stateStoreName,
-			KafkaEnvironment environment) {
+	public CustomProductPairAggregator(MetricRegistry metrics, int aggregateWindowInSec, int flushSize,
+			String stateStoreName, KafkaEnvironment environment) {
 		super();
 		this.stateStoreName = stateStoreName;
 		this.environment = environment;
@@ -77,8 +77,14 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		context.schedule(Duration.ofSeconds(this.aggregateWindowInSec), PunctuationType.WALL_CLOCK_TIME, time -> flushStore());
 //		context.schedule(Duration.ofMinutes(1), PunctuationType.STREAM_TIME, time -> flushStore());
 		store = context.getStateStore(stateStoreName);
-		
+
 		this.contextProcessing = timerProcessing.time();
+		
+		processCounter = 0;
+		flushCounter = 0;
+		foundCounter = 0;
+		flushedItemCounter = 0;
+		eventCounter = 0;
 	}
 
 	@Override
@@ -124,13 +130,16 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		}
 //		LOGGER.warn("putting(" + id + "): " + oldValue);
 		store.put(id, oldValue);
-		
+
 		long toBeProcessed = environment.getReport().getSumToBeProcessed();
-		
-		if(LOGGER.isDebugEnabled()) {
+
+		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
 		}
-		
+
+		// TODO
+		LOGGER.warn("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
+
 		if (processCounter >= toBeProcessed) {
 			environment.getReport().setSumEvent(eventCounter);
 //			flushStoreBatched();
@@ -167,7 +176,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	}
 
 	private void flushStoreBatched() {
-		LOGGER.warn("flushStoreBatched");;
+		LOGGER.warn("flushStoreBatched");
+		;
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
 			Stream<KeyValue<String, ProductPair>> stream = KafkaUtils.getStreamFromIterator(it);
@@ -263,7 +273,13 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		LOGGER.info("processCounter: " + processCounter);
 
 		LOGGER.warn("foundCounter: " + foundCounter);
-		this.environment.getReport().setTimerProcessing(contextProcessing.stop()/1_000_000_000.0);
+		this.environment.getReport().setTimerProcessing(contextProcessing.stop() / 1_000_000_000.0);
+
+		processCounter = 0;
+		flushCounter = 0;
+		foundCounter = 0;
+		flushedItemCounter = 0;
+		eventCounter = 0;
 	}
 
 }

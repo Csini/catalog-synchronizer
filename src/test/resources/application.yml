@@ -2,7 +2,7 @@ spring:
   kafka:
     streams:
       auto-startup: false
-    bootstrap-servers : ${spring.embedded.kafka.brokers}
+    bootstrap-servers : ${spring.kafka.bootstrap-servers}
 aggregateWindowInSec: 0
 flushSize: 1000
 store:

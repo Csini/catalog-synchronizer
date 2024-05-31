@@ -7,21 +7,19 @@ import org.springframework.transaction.TransactionStatus;
 
 public class PlatformTransactionManagerSpy implements PlatformTransactionManager {
 
+	
 	@Override
 	public TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void commit(TransactionStatus status) throws TransactionException {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void rollback(TransactionStatus status) throws TransactionException {
-		// TODO Auto-generated method stub
 
 	}
 

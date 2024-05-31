@@ -32,6 +32,7 @@ import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
+import jakarta.annotation.PostConstruct;
 
 @EnableKafka
 @EnableKafkaStreams
@@ -77,25 +78,36 @@ public class KafkaStreamsConfig {
 
 		final Serde<String> stringSerde = Serdes.String();
 
-		Serde<ProductEvent> productEventSerde = kafkaSerdeConfig.productEventSerde();
-		Serde<ProductPair> productPairSerde = kafkaSerdeConfig.productPairSerde();
-
-		String stateStoreName = productPairStoreName + "-" + environment.getRequestid().toString();
-
-		StoreBuilder<KeyValueStore<String, ProductPair>> keyValueStoreBuilder = Stores.keyValueStoreBuilder(
-				Stores.persistentTimestampedKeyValueStore(stateStoreName), stringSerde, productPairSerde);
-		builder.addStateStore(keyValueStoreBuilder);
+		final Serde<ProductEvent> productEventSerde = kafkaSerdeConfig.productEventSerde();
 
 		KStream<String, Flushed> lastStream = builder
 				.stream(kafkaTopicConfig.getProductTopicName(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().toString().equals(key))
-				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec, flushSize, stateStoreName,
-						environment), stateStoreName)
+				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec, flushSize, productPairStoreName,
+						environment), productPairStoreName)
 				.process(() -> new CustomDBWriter(environment.getReport().getSumEvent(), environment, productService,
 						txManager));
 
 		lastStream.to(kafkaTopicConfig.getFlushedName(), Produced.with(stringSerde, kafkaSerdeConfig.flushedSerde()));
 
 		return lastStream;
+	}
+
+	public void addStateStore() {
+		
+		final Serde<ProductPair> productPairSerde = kafkaSerdeConfig.productPairSerde();
+		final Serde<String> stringSerde = Serdes.String();
+		
+		String stateStoreName = productPairStoreName /*+ "-" + environment.getRequestid().toString()*/;
+
+		StoreBuilder<KeyValueStore<String, ProductPair>> keyValueStoreBuilder = Stores.keyValueStoreBuilder(
+				Stores.persistentTimestampedKeyValueStore(stateStoreName), stringSerde, productPairSerde);
+		builder.addStateStore(keyValueStoreBuilder);
+	}
+	
+	@PostConstruct
+	public void postConstruct() {
+		addStateStore();
+		productRollupStream();
 	}
 }

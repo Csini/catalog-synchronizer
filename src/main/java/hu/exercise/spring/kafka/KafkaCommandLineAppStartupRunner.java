@@ -163,7 +163,8 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			while (!service.awaitTermination(100, TimeUnit.MILLISECONDS)) {
 			}
 
-			streamsConfig.productRollupStream();
+//			streamsConfig.addStateStore();
+//			streamsConfig.productRollupStream();
 			
 			factory.setCleanupConfig(new CleanupConfig(true, false));
 			factory.setStreamsUncaughtExceptionHandler(ex -> {

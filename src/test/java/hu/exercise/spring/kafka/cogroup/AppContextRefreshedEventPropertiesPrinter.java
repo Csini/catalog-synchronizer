@@ -22,25 +22,40 @@ public class AppContextRefreshedEventPropertiesPrinter {
 	}
 
 	private void printAllActiveProperties(ConfigurableEnvironment env) {
+		if (LOGGER.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder("\n");
+			sb.append("************************* ALL PROPERTIES(EVENT) ******************************");
 
-		LOGGER.warn("************************* ALL PROPERTIES(EVENT) ******************************");
+			sb.append("\n");
 
-		env.getPropertySources().stream().filter(ps -> ps instanceof MapPropertySource)
-				.map(ps -> ((MapPropertySource) ps).getSource().keySet()).flatMap(Collection::stream).distinct()
-				.sorted().forEach(key -> LOGGER.warn("{}={}", key, env.getProperty(key)));
+			env.getPropertySources().stream().filter(ps -> ps instanceof MapPropertySource)
+					.map(ps -> ((MapPropertySource) ps).getSource().keySet()).flatMap(Collection::stream).distinct()
+					.sorted().forEach(key -> {
+						sb.append(key + "=" + env.getProperty(key));
+						sb.append("\n");
+					});
 
-		LOGGER.warn("******************************************************************************");
+			sb.append("******************************************************************************");
+			LOGGER.debug(sb.toString());
+		}
 	}
 
 	private void printAllApplicationProperties(ConfigurableEnvironment env) {
 
-		LOGGER.warn("************************* APP PROPERTIES(EVENT) ******************************");
+		if (LOGGER.isDebugEnabled()) {
+			StringBuilder sb = new StringBuilder("\n");
+			sb.append("************************* APP PROPERTIES(EVENT) ******************************");
+			sb.append("\n");
+			env.getPropertySources().stream()
+					.filter(ps -> ps instanceof MapPropertySource && ps.getName().contains("application.properties"))
+					.map(ps -> ((MapPropertySource) ps).getSource().keySet()).flatMap(Collection::stream).distinct()
+					.sorted().forEach(key -> {
+						sb.append(key + "=" + env.getProperty(key));
+						sb.append("\n");
+					});
 
-		env.getPropertySources().stream()
-				.filter(ps -> ps instanceof MapPropertySource && ps.getName().contains("application.properties"))
-				.map(ps -> ((MapPropertySource) ps).getSource().keySet()).flatMap(Collection::stream).distinct()
-				.sorted().forEach(key -> LOGGER.warn("{}={}", key, env.getProperty(key)));
-
-		LOGGER.warn("******************************************************************************");
+			sb.append("******************************************************************************");
+			LOGGER.debug(sb.toString());
+		}
 	}
 }
