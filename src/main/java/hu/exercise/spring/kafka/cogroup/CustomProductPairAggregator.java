@@ -137,9 +137,6 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 			LOGGER.debug("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
 		}
 
-		// TODO
-		LOGGER.warn("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
-
 		if (processCounter >= toBeProcessed) {
 			environment.getReport().setSumEvent(eventCounter);
 //			flushStoreBatched();

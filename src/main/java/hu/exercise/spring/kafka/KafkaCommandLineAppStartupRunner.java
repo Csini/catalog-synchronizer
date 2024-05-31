@@ -176,6 +176,9 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			factory.start();
 			environment.getReport().printProgressbar();
 			
+			while (!factory.isRunning()) {
+			}
+			
 			//System.out.println(factory.getTopology().describe().toString());
 			
 

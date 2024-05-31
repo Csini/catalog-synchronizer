@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -54,29 +52,15 @@ import hu.exercise.spring.kafka.input.Product;
 @TestPropertySource("/application.yml")
 @SpringBootTest(classes = { KafkaTestConfig.class, KafkaSerdeConfig.class, KafkaStreamsConfig.class,
 		KafkaTopicConfig.class, KafkaEnvironment.class, JAXBConfig.class, ProductServiceSpy.class,
-		PlatformTransactionManagerSpy.class, AppContextRefreshedEventPropertiesPrinter.class }
-//, properties = "spring.autoconfigure.exclude="
-//				+ "org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration"
-)
-@EmbeddedKafka(partitions = 1 /* , topics = {"#{kafkaTopicConfig.flushedName}"} */
-		, bootstrapServersProperty = "spring.kafka.bootstrap-servers", brokerProperties = {
-				"log.dir=target/kafka-log", "auto.create.topics.enable=${kafka.broker.topics-enable:true}" })
-//@ExtendWith(EmbeddedKafkaExtension.class)
+		PlatformTransactionManagerSpy.class, AppContextRefreshedEventPropertiesPrinter.class })
+@EmbeddedKafka(partitions = 1, bootstrapServersProperty = "spring.kafka.bootstrap-servers", brokerProperties = {
+		"log.dir=target/kafka-log", "auto.create.topics.enable=${kafka.broker.topics-enable:true}" })
 public class KafkaStreamComplexTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamComplexTest.class);
 
-//	@RegisterExtension
-//	static EmbeddedKafkaExtension embeddedKafka = new EmbeddedKafkaExtension(1, false);
-
 	@Autowired
 	StreamsBuilderFactoryBean factory;
-
-//	@Autowired
-//	private DefaultKafkaConsumerFactory<String, ProductEvent> productEventConsumerFactory;
-
-//	@ClassRule
-//	private static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, false, 5, "cat", "hat");
 
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafka;
@@ -95,20 +79,22 @@ public class KafkaStreamComplexTest {
 
 	@Autowired
 	ProductServiceSpy productServiceSpy;
+	
+	@Autowired
+	PlatformTransactionManagerSpy platformTransactionManagerSpy;
 
 	private EasyRandom generator = new EasyRandom();
 
 	@BeforeEach
 	public void beforeEach() {
 		LOGGER.warn("beforeEach");
-//		this.embeddedKafka = new EmbeddedKafkaBroker(1, false);
-//		this.embeddedKafka.afterPropertiesSet();
 
 		this.embeddedKafka.addTopics(kafkaTopicConfig.readedFromDb(), kafkaTopicConfig.validProduct(),
 				kafkaTopicConfig.invalidProduct(), kafkaTopicConfig.flushed(), kafkaTopicConfig.productTopic(),
 				kafkaTopicConfig.dbEventTopic(), kafkaTopicConfig.runs());
 
 		productServiceSpy.reset();
+		platformTransactionManagerSpy.reset();
 
 		// new requestid
 		environment.init();
@@ -120,33 +106,11 @@ public class KafkaStreamComplexTest {
 	@AfterEach
 	public void afterEach() throws Exception {
 		LOGGER.warn("afterEach");
-		// Runnable runnable = () -> {
-//			System.out.println("bla");
-//		};
-//		RunnableFuture<Void> task = new FutureTask<>(runnable, null);
-//		task.run();
-//		factory.stop(runnable);
-//		task.get(); // this will block until Runnable completes
-//		embeddedKafka.restart(0);
-
-//		Runnable runnable = () -> {
-//			System.out.println("bla");
-//			embeddedKafka.destroy();
-//		};
-//		RunnableFuture<Void> task = new FutureTask<>(runnable, null);
-//		task.run();
-//		factory.stop(runnable);
-//		task.get(); // this will block until Runnable completes
-		System.out.println("z");
 	}
-	
+
 	@DirtiesContext
 	@Test
 	public void test_RollupStream_complex() throws InterruptedException, ExecutionException {
-
-//		this.embeddedKafka.getEmbeddedKafka().addTopics(kafkaTopicConfig.readedFromDb(),
-//				kafkaTopicConfig.validProduct(), kafkaTopicConfig.invalidProduct(), kafkaTopicConfig.flushed(),
-//				kafkaTopicConfig.productTopic(), kafkaTopicConfig.dbEventTopic(), kafkaTopicConfig.runs());
 
 		Consumer<String, Flushed> flushConsumer = flushConsumer();
 		environment.getReport().setSumReaded(8);
@@ -198,28 +162,21 @@ public class KafkaStreamComplexTest {
 		Assertions.assertEquals(countDelete.intValue(), productServiceSpy.getCountDelete());
 		Assertions.assertEquals(countUpdate.intValue(), productServiceSpy.getCountUpdate());
 
+		Assertions.assertEquals(1, platformTransactionManagerSpy.getCommitCounter());
 	}
 
 	@DirtiesContext
 	@Test
 	public void test_RollupStream_insert_only() throws InterruptedException, ExecutionException {
 
-//		this.embeddedKafka.getEmbeddedKafka().addTopics(kafkaTopicConfig.readedFromDb(),
-//				kafkaTopicConfig.validProduct(), kafkaTopicConfig.invalidProduct(), kafkaTopicConfig.flushed(),
-//				kafkaTopicConfig.productTopic(), kafkaTopicConfig.dbEventTopic(), kafkaTopicConfig.runs());
-
 		environment.getReport().setSumReaded(2);
 
 		sendProductEvent(generateProductEvent("1", Source.TSV));
 		sendProductEvent(generateProductEvent("2", Source.TSV));
 
-//			Consumer<String, ProductEvent> pConsumer = productEventConsumerFactory.createConsumer();
-
 		initAndStartStream();
 
 		Consumer<String, Flushed> flushConsumer = flushConsumer();
-		// Collection<String> topics = List.of(kafkaTopicConfig.getFlushedName());
-//			flushConsumer.subscribe(topics);
 		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
 
 		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
@@ -255,6 +212,110 @@ public class KafkaStreamComplexTest {
 		Assertions.assertEquals(countDelete.intValue(), productServiceSpy.getCountDelete());
 		Assertions.assertEquals(countUpdate.intValue(), productServiceSpy.getCountUpdate());
 
+		Assertions.assertEquals(1, platformTransactionManagerSpy.getCommitCounter());
+	}
+
+	@DirtiesContext
+	@Test
+	public void test_RollupStream_delete_only() throws InterruptedException, ExecutionException {
+
+		environment.getReport().setSumReaded(3);
+
+		sendProductEvent(generateProductEvent("1", Source.DB));
+		sendProductEvent(generateProductEvent("2", Source.DB));
+		sendProductEvent(generateProductEvent("3", Source.DB));
+
+		initAndStartStream();
+
+		Consumer<String, Flushed> flushConsumer = flushConsumer();
+		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
+
+		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
+		AtomicInteger countInsert = new AtomicInteger();
+		AtomicInteger countDelete = new AtomicInteger();
+		AtomicInteger countUpdate = new AtomicInteger();
+		List<Flushed> flushValues = new ArrayList<>();
+		flushRecords.forEach(record -> {
+			Flushed f = record.value();
+			if (!environment.getRequestid().toString().equals(f.getRequestid())) {
+				LOGGER.warn("ignoring " + f.toString());
+				return;
+			}
+
+			countInsert.addAndGet(f.getCountInsert());
+			countDelete.addAndGet(f.getCountDelete());
+			countUpdate.addAndGet(f.getCountUpdate());
+			flushValues.add(f);
+		});
+
+		LOGGER.warn("flushValues: " + flushValues);
+
+		Assertions.assertNotEquals(0, flushValues.size());
+
+		Flushed flushed = flushValues.get(flushValues.size() - 1);
+		Assertions.assertEquals(environment.getReport().getSumReaded(), flushed.getSumProcessed());
+
+		Assertions.assertEquals(0, flushed.getCountInsert());
+		Assertions.assertEquals(3, flushed.getCountDelete());
+		Assertions.assertEquals(0, flushed.getCountUpdate());
+
+		Assertions.assertEquals(countInsert.intValue(), productServiceSpy.getCountInsert());
+		Assertions.assertEquals(countDelete.intValue(), productServiceSpy.getCountDelete());
+		Assertions.assertEquals(countUpdate.intValue(), productServiceSpy.getCountUpdate());
+
+		Assertions.assertEquals(1, platformTransactionManagerSpy.getCommitCounter());
+	}
+
+	@DirtiesContext
+	@Test
+	public void test_RollupStream_update_only() throws InterruptedException, ExecutionException {
+
+		environment.getReport().setSumReaded(4);
+
+		sendProductEvent(generateProductEvent("1", Source.DB));
+		sendProductEvent(generateProductEvent("2", Source.TSV));
+		sendProductEvent(generateProductEvent("1", Source.TSV));
+		sendProductEvent(generateProductEvent("2", Source.DB));
+
+		initAndStartStream();
+
+		Consumer<String, Flushed> flushConsumer = flushConsumer();
+		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
+
+		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
+		AtomicInteger countInsert = new AtomicInteger();
+		AtomicInteger countDelete = new AtomicInteger();
+		AtomicInteger countUpdate = new AtomicInteger();
+		List<Flushed> flushValues = new ArrayList<>();
+		flushRecords.forEach(record -> {
+			Flushed f = record.value();
+			if (!environment.getRequestid().toString().equals(f.getRequestid())) {
+				LOGGER.warn("ignoring " + f.toString());
+				return;
+			}
+
+			countInsert.addAndGet(f.getCountInsert());
+			countDelete.addAndGet(f.getCountDelete());
+			countUpdate.addAndGet(f.getCountUpdate());
+			flushValues.add(f);
+		});
+
+		LOGGER.warn("flushValues: " + flushValues);
+
+		Assertions.assertNotEquals(0, flushValues.size());
+
+		Flushed flushed = flushValues.get(flushValues.size() - 1);
+		Assertions.assertEquals(environment.getReport().getSumReaded(), flushed.getSumProcessed());
+
+		Assertions.assertEquals(0, flushed.getCountInsert());
+		Assertions.assertEquals(0, flushed.getCountDelete());
+		Assertions.assertEquals(2, flushed.getCountUpdate());
+
+		Assertions.assertEquals(countInsert.intValue(), productServiceSpy.getCountInsert());
+		Assertions.assertEquals(countDelete.intValue(), productServiceSpy.getCountDelete());
+		Assertions.assertEquals(countUpdate.intValue(), productServiceSpy.getCountUpdate());
+
+		Assertions.assertEquals(1, platformTransactionManagerSpy.getCommitCounter());
 	}
 
 	private void sendProductEvent(ProductEvent productEvent) throws InterruptedException, ExecutionException {
@@ -265,9 +326,6 @@ public class KafkaStreamComplexTest {
 	}
 
 	private void initAndStartStream() {
-
-//		streamsConfig.addStateStore();
-//		streamsConfig.productRollupStream();
 
 		factory.setCleanupConfig(new CleanupConfig(true, false));
 		factory.setStreamsUncaughtExceptionHandler(ex -> {

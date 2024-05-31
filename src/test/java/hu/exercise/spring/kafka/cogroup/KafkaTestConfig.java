@@ -43,11 +43,8 @@ public class KafkaTestConfig {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaTestConfig.class);
 
-	@Value("${" + EmbeddedKafkaBroker.SPRING_EMBEDDED_KAFKA_BROKERS + "}")
-	private String brokerAddresses;
-
-//	@Autowired
-//	private EmbeddedKafkaBroker embeddedKafka;
+	@Autowired
+	private EmbeddedKafkaBroker embeddedKafka;
 
 	@Autowired
 	KafkaSerdeConfig kafkaSerdeConfig;
@@ -59,7 +56,7 @@ public class KafkaTestConfig {
 	public KafkaStreamsConfiguration kStreamsConfigs() {
 		Map<String, Object> props = new HashMap<>();
 		props.put(StreamsConfig.APPLICATION_ID_CONFIG, "testStreams");
-		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.brokerAddresses);
+		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, embeddedKafka.getBrokersAsString());
 		props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG,
 				kafkaSerdeConfig.productEventSerde().getClass().getName());
