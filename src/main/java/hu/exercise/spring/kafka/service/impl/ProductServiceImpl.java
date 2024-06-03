@@ -42,7 +42,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Stream<Product> getAllProducts(String requestid) {
 		Stream<Product> allByOrderByIdAsc = KafkaUtils.getStreamFromIterator(repository.findAll().iterator());
-		LOGGER.warn("allByOrderByIdAsc");
+		LOGGER.info("allByOrderByIdAsc");
 		return allByOrderByIdAsc;
 	}
 

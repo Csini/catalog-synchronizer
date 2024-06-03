@@ -13,6 +13,7 @@ import com.univocity.parsers.tsv.TsvParserSettings;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
+import hu.exercise.spring.kafka.config.InputOutputConfig;
 import jakarta.annotation.PostConstruct;
 
 @Service
@@ -49,9 +50,10 @@ public class TSVHandler {
 
 	public void processInputFile() throws FileNotFoundException {
 
-		// parses everything. All rows will be pumped into the Processor.
-		parser.parse(TSVHandler.class.getResourceAsStream("/input/" + environment.getFilename()),
-				StandardCharsets.UTF_8);
+		String name = environment.getFilePath();
+
+		LOGGER.warn("processing input file: " + name);
+		parser.parse(TSVHandler.class.getResourceAsStream(name), StandardCharsets.UTF_8);
 
 		long line = parser.getContext().currentLine();
 		if (line >= 2) {

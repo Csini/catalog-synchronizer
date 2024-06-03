@@ -223,8 +223,8 @@ public class Report {
 		// int sumEvent = productEventMessageProducer.getCounter();
 		int sumEvent = getSumEvent();
 		int sumProcessed = getSumProcessed();
-		LOGGER.warn("sumEvent    : " + sumEvent);
-		LOGGER.warn("sumProcessed: " + sumProcessed);
+		LOGGER.info("sumEvent    : " + sumEvent);
+		LOGGER.info("sumProcessed: " + sumProcessed);
 
 		BigDecimal temp = BigDecimal.ZERO;
 
@@ -233,14 +233,14 @@ public class Report {
 		}
 		long i = temp.multiply(BigDecimal.valueOf(100)).intValue();
 
-		LOGGER.warn("i: " + i);
+		LOGGER.info("i: " + i);
 
 		StringBuilder sb = new StringBuilder();
 		for (int j = 0; j < i; j++) {
 			sb.append("#");
 		}
 		System.out.print(
-				"[" + String.format("%-100s", sb.toString()) + "] " + i + "% (" + run.getRequestid() + ")" + "\r");
+				"[" + String.format("%-100s", sb.toString()) + "] " + String.format("%3s", i) + "% (" + run.getRequestid() + ")" + "\r");
 		return i;
 	}
 

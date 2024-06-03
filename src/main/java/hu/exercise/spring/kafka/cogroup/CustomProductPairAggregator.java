@@ -79,7 +79,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 		store = context.getStateStore(stateStoreName);
 
 		this.contextProcessing = timerProcessing.time();
-		
+
 		processCounter = 0;
 		flushCounter = 0;
 		foundCounter = 0;
@@ -124,11 +124,6 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 			oldValue.setReadedFromFile(productEvent);
 		}
 
-//		if (rec.timestamp() > oldValue.timestamp()) {
-//			oldvalue.setTimestamp(rec.timestamp());
-//			store.put(key, value);
-//		}
-//		LOGGER.warn("putting(" + id + "): " + oldValue);
 		store.put(id, oldValue);
 
 		long toBeProcessed = environment.getReport().getSumToBeProcessed();
@@ -139,15 +134,18 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 		if (processCounter >= toBeProcessed) {
 			environment.getReport().setSumEvent(eventCounter);
-//			flushStoreBatched();
-			flushStore();
+			if (flushSize <= 0) {
+				flushStore();
+			} else {
+				flushStoreBatched();
+			}
 		}
 	}
 
 	private void flushStore() {
-		LOGGER.warn("flushStore: " + store.approximateNumEntries());
+		LOGGER.info("flushStore: " + store.approximateNumEntries());
 		if (flushCounter == 0 && store.approximateNumEntries() == 1) {
-			LOGGER.warn("don't do anything yet, waiting " + aggregateWindowInSec + " seconds...");
+			LOGGER.info("don't do anything yet, waiting " + aggregateWindowInSec + " seconds...");
 			return;
 		}
 		AtomicInteger counter = new AtomicInteger();
@@ -164,7 +162,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 				toBeForwarded.getPairList().add(next.value);
 				store.delete(next.key);
 			}
-			LOGGER.warn("flushed (" + flushCounter + "): " + counter);
+			LOGGER.info("flushed (" + flushCounter + "): " + counter);
 			context.forward(new Record<String, ProductRollup>(environment.getRequestid() + "-" + flushCounter,
 					toBeForwarded, new Date().getTime()));
 			flushCounter++;
@@ -173,20 +171,13 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	}
 
 	private void flushStoreBatched() {
-		LOGGER.warn("flushStoreBatched");
+		LOGGER.info("flushStoreBatched");
 		;
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
 			Stream<KeyValue<String, ProductPair>> stream = KafkaUtils.getStreamFromIterator(it);
 			Optional<List<KeyValue<String, ProductPair>>> lastElement = partitionStream(stream, flushSize).stream()
 					.map(nextList -> {
-//						try {
-//							LOGGER.warn("waiting " + aggregateWindowInSec + " seconds..");
-//							TimeUnit.SECONDS.sleep(aggregateWindowInSec);
-//						} catch (InterruptedException e) {
-//							// TODO
-//							throw new RuntimeException(e);
-//						}
 						ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(),
 								flushCounter, flushedItemCounter);
 						if (LOGGER.isDebugEnabled()) {
@@ -197,7 +188,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 							flushedItemCounter++;
 							store.delete(next.key);
 						});
-						LOGGER.warn("flushed (" + flushCounter + ") sum: " + flushedItemCounter);
+						LOGGER.info("flushed (" + flushCounter + ") sum: " + flushedItemCounter);
 						context.forward(new Record<String, ProductRollup>(
 								environment.getRequestid() + "-" + flushCounter, toBeForwarded, new Date().getTime()));
 						flushCounter++;
@@ -265,11 +256,9 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 	@Override
 	public void close() {
-		// TODO clear store ?
-//		store.
 		LOGGER.info("processCounter: " + processCounter);
 
-		LOGGER.warn("foundCounter: " + foundCounter);
+		LOGGER.info("foundCounter: " + foundCounter);
 		this.environment.getReport().setTimerProcessing(contextProcessing.stop() / 1_000_000_000.0);
 
 		processCounter = 0;
