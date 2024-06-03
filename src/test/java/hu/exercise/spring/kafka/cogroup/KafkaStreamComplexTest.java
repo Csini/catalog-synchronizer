@@ -39,6 +39,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.config.InputOutputConfig;
 import hu.exercise.spring.kafka.config.JAXBConfig;
 import hu.exercise.spring.kafka.config.KafkaSerdeConfig;
 import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
@@ -52,7 +53,7 @@ import hu.exercise.spring.kafka.input.Product;
 @TestPropertySource("/application.yml")
 @SpringBootTest(classes = { KafkaTestConfig.class, KafkaSerdeConfig.class, KafkaStreamsConfig.class,
 		KafkaTopicConfig.class, KafkaEnvironment.class, JAXBConfig.class, ProductServiceSpy.class,
-		PlatformTransactionManagerSpy.class, AppContextRefreshedEventPropertiesPrinter.class })
+		PlatformTransactionManagerSpy.class, AppContextRefreshedEventPropertiesPrinter.class, InputOutputConfig.class })
 @EmbeddedKafka(partitions = 1, bootstrapServersProperty = "spring.kafka.bootstrap-servers", brokerProperties = {
 		"log.dir=target/kafka-log", "auto.create.topics.enable=${kafka.broker.topics-enable:true}" })
 public class KafkaStreamComplexTest {
@@ -98,7 +99,7 @@ public class KafkaStreamComplexTest {
 
 		// new requestid
 		environment.init();
-		environment.getRun().setFilename("unit-test");
+		environment.getRun().setFilename("unit-test.txt");
 		environment.getReport().setSumReaded(0);
 
 	}

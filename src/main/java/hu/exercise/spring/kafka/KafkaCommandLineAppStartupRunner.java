@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.stereotype.Component;
@@ -74,6 +75,8 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 	Timer.Context contextAllRun;
 
+	private boolean generatingSpringwolfOnly;
+	
 	@Override
 	public void run(String... args) {
 		Timer timer = metrics.timer("contextAllRun");
@@ -84,6 +87,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 		if (argsList.contains("generating-springwolf-only")) {
 			LOGGER.warn("generating-springwolf-only");
+			generatingSpringwolfOnly = true;
 			return;
 		}
 		try {
@@ -165,7 +169,7 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 //			streamsConfig.addStateStore();
 //			streamsConfig.productRollupStream();
-			
+
 			factory.setCleanupConfig(new CleanupConfig(true, false));
 			factory.setStreamsUncaughtExceptionHandler(ex -> {
 				LOGGER.error("Kafka-Streams uncaught exception occurred. Stream will be replaced with new thread", ex);
@@ -175,12 +179,11 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 			});
 			factory.start();
 			environment.getReport().printProgressbar();
-			
+
 			while (!factory.isRunning()) {
 			}
-			
-			//System.out.println(factory.getTopology().describe().toString());
-			
+
+			// System.out.println(factory.getTopology().describe().toString());
 
 		} catch (Throwable e) {
 			LOGGER.error("commandline", e);
@@ -189,10 +192,18 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 	}
 
 	@PreDestroy
-	public void onExit() throws IOException, JAXBException, URISyntaxException {
-		LOGGER.warn("Exiting...");
-		long elapsed = contextAllRun.stop();
-		environment.getReport().setTimeAllRun(elapsed / 1_000_000_000.0);
-		reportController.createReport();
+	public void onExit() {
+		try {
+			LOGGER.warn("Exiting...");
+			long elapsed = contextAllRun.stop();
+			environment.getReport().setTimeAllRun(elapsed / 1_000_000_000.0);
+			if(!generatingSpringwolfOnly) {
+				reportController.createReport();
+			}
+
+		} catch (Throwable e) {
+			LOGGER.error("onExit", e);
+			System.exit(11);
+		}
 	}
 }

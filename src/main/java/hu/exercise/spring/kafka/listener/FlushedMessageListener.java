@@ -28,7 +28,7 @@ public class FlushedMessageListener {
 
 	@KafkaListener(topics = "#{kafkaTopicConfig.flushedName}", containerFactory = "productPairKafkaListenerContainerFactory", batch = "true")
 	public void productPairListener(Flushed flushed) {
-		LOGGER.warn("Received flushed message: " + flushed);
+		LOGGER.info("Received flushed message: " + flushed);
 
 		Report report = environment.getReport();
 		report.setCountInsert(report.getCountInsert() + flushed.getCountInsert());

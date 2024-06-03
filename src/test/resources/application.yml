@@ -4,7 +4,12 @@ spring:
       auto-startup: false
     bootstrap-servers : ${spring.kafka.bootstrap-servers}
 aggregateWindowInSec: 0
-flushSize: 1000
+flushSize: 0
+path:
+  input: /input
+directory:
+  output:
+    name: /../test-output
 store:
   name:
     productPair: productPairStore

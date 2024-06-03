@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
+import hu.exercise.spring.kafka.config.InputOutputConfig;
 import hu.exercise.spring.kafka.output.Testsuites;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
@@ -24,6 +25,9 @@ public class KafkaReportController {
 	@Autowired
 	public Marshaller jaxbMarshaller;
 
+	@Autowired
+	InputOutputConfig inputOutputConfig;
+
 	public void createReport() throws IOException, JAXBException, URISyntaxException {
 
 		writeFile(environment.getReport().createTestsuites());
@@ -34,9 +38,7 @@ public class KafkaReportController {
 
 		String reportfilename = "report-" + environment.getRequestid() + ".xml";
 
-		File input = new File(KafkaReportController.class.getResource("/").toURI());
-		File file = new File(input.getParentFile().getParentFile().getAbsolutePath() + "/src/main/resources/output/"
-				+ reportfilename);
+		File file = new File(inputOutputConfig.getOutputPath() + "/" + reportfilename);
 		file.getParentFile().mkdirs();
 		file.createNewFile();
 		LOGGER.warn("creating " + file.getAbsolutePath());

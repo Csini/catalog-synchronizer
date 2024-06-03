@@ -71,15 +71,9 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 		flushCounter++;
 
-//		LOGGER.info("processCounter: " + processCounter);
-
 		AtomicInteger counter = new AtomicInteger();
 
 		Map<Action, List<Product>> groupedProductRollups = group(rec, counter);
-
-//		groupedProductRollups.entrySet().forEach(entry -> {
-//			LOGGER.warn(entry.getKey() + ": " + entry.getValue().size());
-//		});
 
 		Flushed flushed = Flushed.builder().requestid(environment.getRequestid().toString())
 				.sumProcessed(rec.value().getProcessed()).build();
@@ -107,10 +101,10 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 			flushed.setCountError(productList.size());
 		}
 
-		LOGGER.warn("processed: " + counter);
+		LOGGER.info("processed: " + counter);
 
 		environment.getReport().setSumDBEvents(environment.getReport().getSumDBEvents() + counter.intValue());
-		// TODO
+
 		if (environment.getReport().getSumEvent() <= flushed.getSumProcessed()) {
 			this.txManager.commit(this.status);
 		}
@@ -158,9 +152,6 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 
 	@Override
 	public void close() {
-		// TODO clear store ?
-//		store.
-//		txManager.commit(this.status);
 		LOGGER.info("flushCounter: " + flushCounter);
 		flushCounter = 0;
 	}
