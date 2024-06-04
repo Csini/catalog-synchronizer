@@ -71,6 +71,8 @@ public class Report {
 	private Throwable reportedThrowable;
 
 	private Testsuites testsuites;
+	
+	private String dbfilenamewithpath;
 
 	private static final ObjectFactory OBJECTFACTORY = new ObjectFactory();
 
@@ -95,6 +97,10 @@ public class Report {
 		Testsuite testsuiteF = OBJECTFACTORY.createTestsuite();
 		testsuites.getTestsuite().add(testsuiteF);
 		testsuiteF.setName("input: " + this.run.getFilename());
+		
+		Testsuite testsuiteO = OBJECTFACTORY.createTestsuite();
+		testsuites.getTestsuite().add(testsuiteO);
+		testsuiteO.setName("output: " + dbfilenamewithpath);
 
 		if (getReportedThrowable() != null || getErrorCode() > 0) {
 			Testsuite testsuiteError = OBJECTFACTORY.createTestsuite();

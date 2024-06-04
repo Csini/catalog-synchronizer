@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.AbstractDriverBasedDataSource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -31,12 +32,24 @@ public class DbConfig {
 		final DriverManagerDataSource dataSource = new DriverManagerDataSource();
 //		final SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
 		dataSource.setDriverClassName(env.getProperty("driverClassName"));
-		dataSource.setUrl(env.getProperty("url"));
+		dataSource.setUrl(getUrl());
 		dataSource.setUsername(env.getProperty("user"));
 		dataSource.setPassword(env.getProperty("password"));
 
 //		dataSource.setSuppressClose(true);
 		return dataSource;
+	}
+
+	public String getUrl() {
+		return env.getProperty("url");
+	}
+	
+	public String getDbfilenamewithpath() {
+		return env.getProperty("dbfilenamewithpath");
+	}
+	
+	public String getBkpPath() {
+		return env.getProperty("path.bkp");
 	}
 
 	@Bean
