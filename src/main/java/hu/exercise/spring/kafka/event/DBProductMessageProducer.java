@@ -1,5 +1,7 @@
 package hu.exercise.spring.kafka.event;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -7,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,16 +17,16 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
-import hu.exercise.spring.kafka.KafkaApplication;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
+import hu.exercise.spring.kafka.config.DbConfig;
 import hu.exercise.spring.kafka.config.KafkaTopicConfig;
 import hu.exercise.spring.kafka.service.ProductService;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
 
 @Service
-public class DBProductMessageProducer extends ProductEventMessageProducer{
+public class DBProductMessageProducer extends ProductEventMessageProducer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DBProductMessageProducer.class);
 
@@ -39,25 +42,27 @@ public class DBProductMessageProducer extends ProductEventMessageProducer{
 	@Autowired
 	public KafkaEnvironment environment;
 
+	@Autowired
+	DbConfig dbConfig;
+
 	public void sendMessages() throws IOException {
 		LOGGER.info("sendMessages");
 		Report report = environment.getReport();
 		try {
 			backupDB();
 
-			
-			productService.getAllProducts(String.valueOf(environment.getRequestid()))
-					.forEach(p -> {
+			productService.getAllProducts(String.valueOf(environment.getRequestid())).forEach(p -> {
 
-						report.setCountReadedFromDB(report.getCountReadedFromDB() + 1);
-						report.setSumReaded(report.getSumReaded() + 1);
+				report.setCountReadedFromDB(report.getCountReadedFromDB() + 1);
+				report.setSumReaded(report.getSumReaded() + 1);
 
-						LOGGER.info("sending product to readedFromDb: " + p);
-						ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
-						sendEvent(event);
+				LOGGER.info("sending product to readedFromDb: " + p);
+				ProductEvent event = new ProductEvent(p.getId(), environment.getRequestid(), Source.DB, p);
+				sendEvent(event);
 
 //						try {
-							CompletableFuture<SendResult<String, ProductEvent>> sendProductMessage = super.sendProductMessage(event);
+				CompletableFuture<SendResult<String, ProductEvent>> sendProductMessage = super.sendProductMessage(
+						event);
 //							SendResult<String, ProductEvent> sendResult = sendProductMessage.get(10, TimeUnit.SECONDS);
 //					        handleSuccess(data);
 //					    }
@@ -76,7 +81,7 @@ public class DBProductMessageProducer extends ProductEventMessageProducer{
 //					            handleFailure(data, record, ex);
 //					        }
 //					    });
-					});
+			});
 		} catch (IOException e) {
 			LOGGER.error("", e);
 			throw e;
@@ -87,21 +92,28 @@ public class DBProductMessageProducer extends ProductEventMessageProducer{
 
 	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.readedFromDbName}", description = "All the Product readed from DB."))
 	private void sendEvent(ProductEvent event) {
-		readedFromDbKafkaTemplate.send(kafkaTopicConfig.getReadedFromDbName(), environment.getRequestid() + "." + event.getId(), event);
+		readedFromDbKafkaTemplate.send(kafkaTopicConfig.getReadedFromDbName(),
+				environment.getRequestid() + "." + event.getId(), event);
 	}
 
 	private void backupDB() throws IOException {
-		LOGGER.info("creating DB backup...");
+		LOGGER.warn("creating DB backup...");
 
 //		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-		try (InputStream origin = KafkaApplication.class.getResourceAsStream("/products.db")) {
-			Path destination = Paths.get("bkp/productsdb-" + environment.getRequestid() + ".bak");
+		String dbUrl = dbConfig.getDbfilenamewithpath();
+		LOGGER.info("dbUrl: " + dbUrl);
+		environment.getReport().setDbfilenamewithpath(dbUrl);
+
+		File initialFile = new File(dbUrl);
+		try (InputStream origin = new FileInputStream(initialFile)) {
+			Path destination = Paths.get(dbConfig.getBkpPath()
+					+"/" + FilenameUtils.removeExtension(initialFile.getName()) + "-" + environment.getRequestid() + ".bak");
 
 			Files.createDirectories(destination.getParent());
 			Files.copy(origin, destination);
 
-			LOGGER.info(destination.getFileName() + " in " + destination.getParent() + " is ready.");
+			LOGGER.warn(destination.getParent() + "/" + destination.getFileName() + " is ready.");
 		}
 
 		// INSERT INTO new_db.table_name SELECT * FROM old_db.table_name;
