@@ -92,16 +92,6 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 		}
 		try {
 
-			// save metadata
-
-//		DefaultTransactionDefinition def = new DefaultTransactionDefinition();
-//		// explicitly setting the transaction name is something that can be done only
-//		// programmatically
-//		def.setName("SomeTxName");
-//		def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
-//
-//		TransactionStatus status = txManager.getTransaction(def);
-
 			if (argsList.isEmpty()) {
 				IllegalArgumentException e = new IllegalArgumentException(
 						"Please run this application with an input filename as the first argument. For example like this: mvn spring-boot:run -Dspring-boot.run.arguments=\"file1.txt\"");
@@ -109,7 +99,8 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 				shutdownController.shutdownContextWithError(3, e);
 				return;
 			}
-
+			
+			// save metadata
 			Run run = environment.getRun();
 			// args[0]
 			run.setFilename(argsList.get(0));

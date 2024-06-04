@@ -5,7 +5,7 @@ Topologies:
     Processor: KSTREAM-FILTER-0000000001 (stores: [])
       --> KSTREAM-PROCESSOR-0000000002
       <-- KSTREAM-SOURCE-0000000000
-    Processor: KSTREAM-PROCESSOR-0000000002 (stores: [productPairStore-requestid])
+    Processor: KSTREAM-PROCESSOR-0000000002 (stores: [productPairStore])
       --> KSTREAM-PROCESSOR-0000000003
       <-- KSTREAM-FILTER-0000000001
     Processor: KSTREAM-PROCESSOR-0000000003 (stores: [])
