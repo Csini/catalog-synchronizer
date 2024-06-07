@@ -46,24 +46,7 @@ public class KafkaConsumerConfig {
 	@Autowired
 	public ShutdownController shutdownController;
 
-//	public ConsumerFactory<String, String> consumerFactory(String groupId) {
-//		Map<String, Object> props = new HashMap<>();
-//		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-//		props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-//		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-//		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-//		props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, "20971520");
-//		props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, "20971520");
-//		return new DefaultKafkaConsumerFactory<>(props);
-//	}
-//
-//	public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(String groupId) {
-//		ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
-//		factory.setConsumerFactory(consumerFactory(groupId));
-//		return factory;
-//	}
-
-	public ConsumerFactory<String, Flushed> productPairConsumerFactory() {
+	public ConsumerFactory<String, Flushed> flushedConsumerFactory() {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getRequestid().toString());
@@ -82,9 +65,9 @@ public class KafkaConsumerConfig {
 	}
 
 	@Bean
-	public ConcurrentKafkaListenerContainerFactory<String, Flushed> productPairKafkaListenerContainerFactory() {
+	public ConcurrentKafkaListenerContainerFactory<String, Flushed> flushedKafkaListenerContainerFactory() {
 		ConcurrentKafkaListenerContainerFactory<String, Flushed> factory = new ConcurrentKafkaListenerContainerFactory<>();
-		factory.setConsumerFactory(productPairConsumerFactory());
+		factory.setConsumerFactory(flushedConsumerFactory());
 		factory.setCommonErrorHandler(errorHandler());
 //		factory.setBatchListener(true); // <<<<<<<<<<<<<<<<<<<<<<<<<
 		return factory;
@@ -95,12 +78,10 @@ public class KafkaConsumerConfig {
 		BackOff fixedBackOff = new FixedBackOff(interval, maxAttempts);
 		DefaultErrorHandler errorHandler = new DefaultErrorHandler((consumerRecord, e) -> {
 
-			// TODO
 			LOGGER.error(String.format("consumed record %s because this exception was thrown",
 					consumerRecord.toString(), e.getClass().getName()), e);
 			shutdownController.shutdownContextWithError(9, e);
 		}, fixedBackOff);
-		// Commented because of the test
 //		errorHandler.addRetryableExceptions(org.sqlite.SQLiteException.class, org.springframework.orm.jpa.JpaSystemException.class);
 		errorHandler.addNotRetryableExceptions(NullPointerException.class);
 		return errorHandler;

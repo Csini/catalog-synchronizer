@@ -99,16 +99,14 @@ public class DBProductMessageProducer extends ProductEventMessageProducer {
 	private void backupDB() throws IOException {
 		LOGGER.warn("creating DB backup...");
 
-//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-
 		String dbUrl = dbConfig.getDbfilenamewithpath();
 		LOGGER.info("dbUrl: " + dbUrl);
 		environment.getReport().setDbfilenamewithpath(dbUrl);
 
 		File initialFile = new File(dbUrl);
 		try (InputStream origin = new FileInputStream(initialFile)) {
-			Path destination = Paths.get(dbConfig.getBkpPath()
-					+"/" + FilenameUtils.removeExtension(initialFile.getName()) + "-" + environment.getRequestid() + ".bak");
+			Path destination = Paths.get(dbConfig.getBkpPath() + "/"
+					+ FilenameUtils.removeExtension(initialFile.getName()) + "-" + environment.getRequestid() + ".bak");
 
 			Files.createDirectories(destination.getParent());
 			Files.copy(origin, destination);
@@ -116,7 +114,6 @@ public class DBProductMessageProducer extends ProductEventMessageProducer {
 			LOGGER.warn(destination.getParent() + "/" + destination.getFileName() + " is ready.");
 		}
 
-		// INSERT INTO new_db.table_name SELECT * FROM old_db.table_name;
 	}
 
 }

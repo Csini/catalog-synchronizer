@@ -438,7 +438,7 @@ operations:
     bindings: {}
     messages:
       - $ref: '#/channels/dbEvents/messages/hu.exercise.spring.kafka.event.DBEvent'
-  flushed_receive_productPairListener:
+  flushed_receive_flushedListener:
     action: receive
     channel:
       $ref: '#/channels/flushed'

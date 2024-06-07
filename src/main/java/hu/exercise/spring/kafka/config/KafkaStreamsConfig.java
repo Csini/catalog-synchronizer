@@ -13,12 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.codahale.metrics.MetricRegistry;
@@ -28,9 +25,7 @@ import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
 import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
 import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
-import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
 import jakarta.annotation.PostConstruct;
 
@@ -49,9 +44,9 @@ public class KafkaStreamsConfig {
 
 	@Value(value = "${flushSize}")
 	private int flushSize;
-	
+
 	@Value(value = "${store.name.productPair}")
-	private String productPairStoreName ;
+	private String productPairStoreName;
 
 	@Autowired
 	public KafkaTopicConfig kafkaTopicConfig;
@@ -83,10 +78,9 @@ public class KafkaStreamsConfig {
 		KStream<String, Flushed> lastStream = builder
 				.stream(kafkaTopicConfig.getProductTopicName(), Consumed.with(stringSerde, productEventSerde))
 				.filter((key, productEvent) -> environment.getRequestid().toString().equals(key))
-				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec, flushSize, productPairStoreName,
-						environment), productPairStoreName)
-				.process(() -> new CustomDBWriter(environment.getReport().getSumEvent(), environment, productService,
-						txManager));
+				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec, flushSize,
+						productPairStoreName, environment), productPairStoreName)
+				.process(() -> new CustomDBWriter(environment, productService, txManager));
 
 		lastStream.to(kafkaTopicConfig.getFlushedName(), Produced.with(stringSerde, kafkaSerdeConfig.flushedSerde()));
 
@@ -94,17 +88,17 @@ public class KafkaStreamsConfig {
 	}
 
 	public void addStateStore() {
-		
+
 		final Serde<ProductPair> productPairSerde = kafkaSerdeConfig.productPairSerde();
 		final Serde<String> stringSerde = Serdes.String();
-		
-		String stateStoreName = productPairStoreName /*+ "-" + environment.getRequestid().toString()*/;
+
+		String stateStoreName = productPairStoreName /* + "-" + environment.getRequestid().toString() */;
 
 		StoreBuilder<KeyValueStore<String, ProductPair>> keyValueStoreBuilder = Stores.keyValueStoreBuilder(
 				Stores.persistentTimestampedKeyValueStore(stateStoreName), stringSerde, productPairSerde);
 		builder.addStateStore(keyValueStoreBuilder);
 	}
-	
+
 	@PostConstruct
 	public void postConstruct() {
 		addStateStore();

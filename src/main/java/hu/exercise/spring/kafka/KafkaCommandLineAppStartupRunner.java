@@ -1,7 +1,5 @@
 package hu.exercise.spring.kafka;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.stereotype.Component;
@@ -30,7 +27,6 @@ import hu.exercise.spring.kafka.service.RunService;
 import hu.exercise.spring.kafka.tsv.InvalidExamplesHandler;
 import hu.exercise.spring.kafka.tsv.TSVHandler;
 import jakarta.annotation.PreDestroy;
-import jakarta.xml.bind.JAXBException;
 
 @Component
 public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
@@ -60,9 +56,6 @@ public class KafkaCommandLineAppStartupRunner implements CommandLineRunner {
 
 	@Autowired
 	KafkaStreamsConfig streamsConfig;
-
-//	@Autowired
-//	PlatformTransactionManager txManager;
 
 	@Autowired
 	KafkaReportController reportController;

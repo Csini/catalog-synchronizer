@@ -13,7 +13,6 @@ import com.univocity.parsers.tsv.TsvParserSettings;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
-import hu.exercise.spring.kafka.config.InputOutputConfig;
 import jakarta.annotation.PostConstruct;
 
 @Service

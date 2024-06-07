@@ -34,9 +34,6 @@ public class InvalidExamplesHandler {
 
 	private TsvWriter writer;
 
-//	@Autowired
-//	private CustomProcessorErrorHandler customWriterErrorHandler;
-
 	private ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 	private Validator validator = factory.getValidator();
 
@@ -52,19 +49,17 @@ public class InvalidExamplesHandler {
 		settings.setRowWriterProcessor(new BeanWriterProcessor<Product>(Product.class));
 //		settings.setProcessorErrorHandler(customWriterErrorHandler);
 		writer = new TsvWriter(settings);
-		// customWriterErrorHandler.setContext(writer.getContext());
-		EasyRandomParameters parameters = new EasyRandomParameters();
-//		parameters.excludeType((Class<?> c) -> Currency.class.equals(c));
-//		image_link
-		parameters.randomize(field -> {
 
+		EasyRandomParameters parameters = new EasyRandomParameters();
+		parameters.randomize(field -> {
 			return Math.random() > 0.9 && ("link".equals(field.getName()) || ("image_link".equals(field.getName())));
 		}, () -> "http://random");
 
 		parameters.randomize(field -> {
-
 			return Math.random() > 0.9 && "id".equals(field.getName());
 		}, () -> "12345678910111213141516171819202122232425262728293031323334353637383940");
+
+// 		parameters.excludeType((Class<?> c) -> Currency.class.equals(c));
 		parameters.randomize(field -> {
 			return "price".equals(field.getName()) || ("sale_price".equals(field.getName()));
 		}, () -> {
