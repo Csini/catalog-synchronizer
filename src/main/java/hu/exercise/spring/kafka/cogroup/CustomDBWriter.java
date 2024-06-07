@@ -38,12 +38,10 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 	private TransactionStatus status;
 
 	private Map<String, Product> readedFromDbMap = new HashMap<String, Product>();
-	private int readed;
 
-	public CustomDBWriter(int readed, KafkaEnvironment environment, ProductService productService,
+	public CustomDBWriter(KafkaEnvironment environment, ProductService productService,
 			PlatformTransactionManager txManager) {
 		super();
-		this.readed = readed;
 		this.environment = environment;
 		this.productService = productService;
 		this.txManager = txManager;
@@ -79,19 +77,18 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 				.sumProcessed(rec.value().getProcessed()).build();
 
 		if (groupedProductRollups.containsKey(Action.DELETE)) {
-//				groupedProductRollups.get(Action.DELETE).forEach(p -> productService.deleteProduct(p.getId()));
 			List<Product> productList = groupedProductRollups.get(Action.DELETE);
-			productService.bulkDeleteProducts(productList, productList.size());
+			productService.bulkDeleteProducts(productList);
 			flushed.setCountDelete(productList.size());
 		}
 		if (groupedProductRollups.containsKey(Action.UPDATE)) {
 			List<Product> productList = groupedProductRollups.get(Action.UPDATE);
-			productService.bulkUpdateProducts(productList, productList.size());
+			productService.bulkUpdateProducts(productList);
 			flushed.setCountUpdate(productList.size());
 		}
 		if (groupedProductRollups.containsKey(Action.INSERT)) {
 			List<Product> productList = groupedProductRollups.get(Action.INSERT);
-			productService.bulkInsertProducts(productList, productList.size());
+			productService.bulkInsertProducts(productList);
 			flushed.setCountInsert(productList.size());
 		}
 
@@ -106,6 +103,7 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 		environment.getReport().setSumDBEvents(environment.getReport().getSumDBEvents() + counter.intValue());
 
 		if (environment.getReport().getSumEvent() <= flushed.getSumProcessed()) {
+			LOGGER.info("commiting.. ");
 			this.txManager.commit(this.status);
 		}
 
@@ -116,9 +114,9 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 	private Map<Action, List<Product>> group(Record<String, ProductRollup> rec, AtomicInteger counter) {
 		Map<Action, List<Product>> groupedProductRollups = rec.value().getPairList().stream()
 				.map((ProductPair pair) -> {
-					Product productToSave = pair.getProductToSave();
-					Action action = pair.getAction();
-//				LOGGER.warn("" + productToSave.getId() + ": " + action);
+//					Product productToSave = pair.getProductToSave();
+//					Action action = pair.getAction();
+//					LOGGER.warn("" + productToSave.getId() + ": " + action);
 					counter.incrementAndGet();
 					return pair;
 
@@ -139,7 +137,6 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 							this.environment.getReport()
 									.setCountNoChange(this.environment.getReport().getCountNoChange() + 1);
 						}
-//				readedFromDb.setNew(false);)
 						return readedFromDb;
 					}
 

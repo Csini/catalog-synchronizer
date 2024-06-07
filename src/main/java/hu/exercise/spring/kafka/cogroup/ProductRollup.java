@@ -19,11 +19,10 @@ public class ProductRollup {
 
 	private List<ProductPair> pairList = new ArrayList<>();
 
-	public ProductRollup(String requestid, int flushid, int processed) {
+	public ProductRollup(String requestid, int flushid) {
 		super();
 		this.requestid = requestid;
 		this.flushid = flushid;
-		this.processed = processed;
 	}
 
 }

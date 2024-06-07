@@ -112,8 +112,6 @@ public class Report {
 				testsuiteError.getTestcase().add(testcaseError);
 				testcaseError.setName("ErrorCode: " + getErrorCode());
 				Error error = OBJECTFACTORY.createError();
-				// TODO
-//				error.setContent();
 				testcaseError.getError().add(error);
 			}
 
@@ -133,7 +131,6 @@ public class Report {
 			Testsuite testsuite = OBJECTFACTORY.createTestsuite();
 			testsuites.getTestsuite().add(testsuite);
 			testsuite.setName("Readed Valid Products:" + getSumReaded());
-//			testsuite.setHostname(environment.getFilename());
 			testsuite.setTime(Math.max(timeReadFromDb, timeReadFromTsv));
 
 			{
@@ -226,7 +223,6 @@ public class Report {
 	}
 
 	public long printProgressbar() {
-		// int sumEvent = productEventMessageProducer.getCounter();
 		int sumEvent = getSumEvent();
 		int sumProcessed = getSumProcessed();
 		LOGGER.info("sumEvent    : " + sumEvent);

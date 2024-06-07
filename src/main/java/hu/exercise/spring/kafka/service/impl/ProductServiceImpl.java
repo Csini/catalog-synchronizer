@@ -1,5 +1,6 @@
 package hu.exercise.spring.kafka.service.impl;
 
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -47,30 +48,33 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	@Override
-	public Iterable<Product> bulkInsertProducts(Iterable<Product> productList, int productListSize ) {
-		
+	public Iterable<Product> bulkInsertProducts(Collection<Product> productList) {
+
 		Iterable<Product> saveAll = repository.saveAll(productList);
-		
-		saveAll.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.INSERT)));
-		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+
+		saveAll.forEach(p -> dbEventMessageProducer
+				.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.INSERT)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed() + productList.size());
 		environment.getReport().printProgressbar();
 		return saveAll;
 	}
 
 	@Override
-	public Iterable<Product> bulkUpdateProducts(Iterable<Product> productList, int productListSize ) {
+	public Iterable<Product> bulkUpdateProducts(Collection<Product> productList) {
 		Iterable<Product> saveAll = repository.saveAll(productList);
-		saveAll.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.UPDATE)));
-		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		saveAll.forEach(p -> dbEventMessageProducer
+				.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.UPDATE)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed() + productList.size());
 		environment.getReport().printProgressbar();
 		return saveAll;
 	}
 
 	@Override
-	public void bulkDeleteProducts(Iterable<Product> productList, int productListSize ) {
+	public void bulkDeleteProducts(Collection<Product> productList) {
 		repository.deleteAll(productList);
-		productList.forEach(p -> dbEventMessageProducer.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.DELETE)));
-		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed()+productListSize);
+		productList.forEach(p -> dbEventMessageProducer
+				.sendMessage(new DBEvent(environment.getRequestid().toString(), p.getId(), Action.DELETE)));
+		environment.getReport().setSumProcessed(environment.getReport().getSumProcessed() + productList.size());
 		environment.getReport().printProgressbar();
 	}
 

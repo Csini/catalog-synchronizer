@@ -18,10 +18,10 @@ public class ProductPair {
 	private String requestid;
 
 	public Action getAction() {
-		if (getReadedFromDb() == null/* || readedFromDb.getSource() == null */) {
+		if (getReadedFromDb() == null) {
 			return Action.INSERT;
 		}
-		if (getReadedFromFile() == null/* || readedFromFile.getSource() == null */) {
+		if (getReadedFromFile() == null) {
 			return Action.DELETE;
 		}
 		if (getReadedFromDb() != null && getReadedFromFile() != null) {

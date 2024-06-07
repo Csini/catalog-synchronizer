@@ -169,12 +169,6 @@
 			<version>2.2.21</version>
 		</dependency>
 
-		<!--		<dependency>-->
-		<!--			<groupId>com.googlecode.grep4j</groupId>-->
-		<!--			<artifactId>grep4j</artifactId>-->
-		<!--			<version>1.8.7</version>-->
-		<!--		</dependency>-->
-
 		<dependency>
 			<groupId>org.xerial</groupId>
 			<artifactId>sqlite-jdbc</artifactId>
@@ -306,48 +300,19 @@
 				<configuration>
 					<packageName>hu.exercise.spring.kafka.output</packageName>
 					<sources>
-						<!--
-						<source>src/main/resources/xsd/xunit.xsd</source>-->
 						<source>src/main/resources/xsd/jenkins-junit.xsd</source>
-						<!--
-						<source>src/main/resources/xsd/junit.xsd</source>-->
-						<!--
-						<source>src/main/resources/xsd/junit-10.xsd</source>-->
 					</sources>
 					<addGeneratedAnnotation>true</addGeneratedAnnotation>
-					<!--					<xjbSources>-->
-					<!--
-					<xjbSource>src/dataexchange/special/aBindingConfiguration.xjb</xjbSource>-->
-					<!--            <xjbSource>src/dataexchange/xjbs</xjbSource>-->
-					<!--        </xjbSources>-->
 				</configuration>
 			</plugin>
-			<!--			<plugin>-->
-			<!--				<groupId>org.springframework.boot</groupId>-->
-			<!--				<artifactId>spring-boot-maven-plugin</artifactId>-->
-			<!--				<configuration>-->
-			<!--
-			<jvmArguments>-Dspring.application.admin.enabled=true</jvmArguments>-->
-			<!--				</configuration>-->
-			<!--				<executions>-->
-			<!--					<execution>-->
-			<!--						<goals>-->
-			<!--							<goal>start</goal>-->
-			<!--							<goal>stop</goal>-->
-			<!--						</goals>-->
-			<!--					</execution>-->
-			<!--				</executions>-->
-			<!--			</plugin>-->
 			<plugin>
 				<groupId>org.springdoc</groupId>
 				<artifactId>springdoc-openapi-maven-plugin</artifactId>
 				<version>1.4</version>
 				<configuration>
 					<apiDocsUrl>http://localhost:8081/springwolf/docs.yaml</apiDocsUrl>
-					<!--  apiDocsUrl = "http://localhost:8080/springwolf/docs" -->
 					<outputFileName>springwolf.yaml</outputFileName>
 					<outputDir>${project.build.directory}/../doc</outputDir>
-
 				</configuration>
 				<executions>
 					<execution>
@@ -391,6 +356,14 @@
 				<artifactId>native-maven-plugin</artifactId>
 				<version>${native-build-tools-plugin.version}</version>
 				<extensions>true</extensions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.7.0</version>
+				<configuration>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

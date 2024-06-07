@@ -27,7 +27,6 @@ public class ProductEventMessageProducer {
 	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.productTopicName}", description = "All the Products readed by the request."))
 	protected CompletableFuture<SendResult<String,ProductEvent>> sendProductMessage(ProductEvent event) {
 
-//		environment.getReport().setSumEvent(environment.getReport().getSumEvent() + 1);
 		return productTopicKafkaTemplate.send(kafkaTopicConfig.getProductTopicName(), event.getRequestid().toString() /* + "." + event.getId() */,
 				event);
 	}
