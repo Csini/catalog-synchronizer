@@ -8,7 +8,7 @@
 	<name>catalog-synchronizer</name>
 	<description>catalog-synchronizer with Kafka and Spring</description>
 
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 
 	<properties>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
