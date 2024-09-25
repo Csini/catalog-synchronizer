@@ -18,6 +18,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import net.csini.spring.kafka.KafkaEntity;
+import net.csini.spring.kafka.KafkaEntityKey;
 
 @Data
 @Getter
@@ -26,8 +28,10 @@ import lombok.Setter;
 @Entity
 @Table(name = "RUN")
 @EqualsAndHashCode(of = "requestid")
+@KafkaEntity
 public class Run {
 
+	@KafkaEntityKey
 	@Id
 	//@GeneratedValue(strategy = GenerationType.UUID)
 	@Schema(description = "Run's unique identifier", example = "a3dbaa5a-1375-491e-8c21-403864de8779")

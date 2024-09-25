@@ -11,6 +11,8 @@ import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
 import hu.exercise.spring.kafka.event.ProductEvent;
+import hu.exercise.spring.kafka.event.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.event.ValidProductEvent;
 import hu.exercise.spring.kafka.input.Product;
 
 @Configuration
@@ -30,7 +32,17 @@ public class KafkaSerdeConfig {
 	public Serde<ProductEvent> productEventSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProductEvent.class));
 	}
+	
+	@Bean
+	public Serde<ValidProductEvent> validProductEventSerde() {
+		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ValidProductEvent.class));
+	}
 
+	@Bean
+	public Serde<ReadedFromDBEvent> readedFromDBEventSerde() {
+		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ReadedFromDBEvent.class));
+	}
+	
 	@Bean
 	public Serde<Product> productSerde() {
 		return Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(Product.class));

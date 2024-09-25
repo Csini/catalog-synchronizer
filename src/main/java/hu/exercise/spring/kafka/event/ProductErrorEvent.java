@@ -10,13 +10,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import net.csini.spring.kafka.KafkaEntity;
+import net.csini.spring.kafka.KafkaEntityKey;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = { "id", "requestid" })
+@KafkaEntity
 public class ProductErrorEvent {
 
+	@KafkaEntityKey
 	@Schema(description = "Run's unique identifier", example = "a3dbaa5a-1375-491e-8c21-403864de8779")
 	private UUID requestid;
 	

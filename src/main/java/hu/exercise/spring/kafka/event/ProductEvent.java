@@ -1,7 +1,5 @@
 package hu.exercise.spring.kafka.event;
 
-import java.util.UUID;
-
 import hu.exercise.spring.kafka.input.Product;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -19,7 +17,7 @@ public class ProductEvent {
 	private String id;
 	
 	@Schema(description = "Run's unique identifier", example = "a3dbaa5a-1375-491e-8c21-403864de8779")
-	private UUID requestid;
+	private String requestid;
 	
 	private Source source;
 	

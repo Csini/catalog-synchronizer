@@ -26,6 +26,9 @@ import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
 import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
 import hu.exercise.spring.kafka.event.ProductEvent;
+import hu.exercise.spring.kafka.event.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.event.Source;
+import hu.exercise.spring.kafka.event.ValidProductEvent;
 import hu.exercise.spring.kafka.service.ProductService;
 import jakarta.annotation.PostConstruct;
 
@@ -49,9 +52,6 @@ public class KafkaStreamsConfig {
 	private String productPairStoreName;
 
 	@Autowired
-	public KafkaTopicConfig kafkaTopicConfig;
-
-	@Autowired
 	public KafkaEnvironment environment;
 
 	@Autowired
@@ -70,19 +70,40 @@ public class KafkaStreamsConfig {
 	KafkaSerdeConfig kafkaSerdeConfig;
 
 	public KStream<String, Flushed> productRollupStream() {
-
 		final Serde<String> stringSerde = Serdes.String();
+		
+		final Serde<ValidProductEvent> validProductEventSerde = kafkaSerdeConfig.validProductEventSerde();
+		
+		KStream<String, ProductEvent> tsvValidStream = builder
+				.stream(ValidProductEvent.class.getName(), Consumed.with(stringSerde, validProductEventSerde))
+				.filter((key, productEvent) -> environment.getRequestid().toString().equals(productEvent.getRequestid()))
+				.mapValues(validProductEvent -> new ProductEvent(validProductEvent.getId(),
+						validProductEvent.getRequestid(), Source.TSV, validProductEvent.getProduct()));
+		
+		tsvValidStream.to(ProductEvent.class.getName(),
+				Produced.with(stringSerde, kafkaSerdeConfig.productEventSerde()));
+
 
 		final Serde<ProductEvent> productEventSerde = kafkaSerdeConfig.productEventSerde();
 
+		final Serde<ReadedFromDBEvent> readedFromDBEventSerde = kafkaSerdeConfig.readedFromDBEventSerde();
+		
+		KStream<String, ProductEvent> dbStream = builder
+				.stream(ReadedFromDBEvent.class.getName(), Consumed.with(stringSerde, readedFromDBEventSerde))
+				.filter((key, productEvent) -> environment.getRequestid().toString().equals(productEvent.getRequestid()))
+				.mapValues(readedFromDBEvent -> new ProductEvent(readedFromDBEvent.getId(),
+						readedFromDBEvent.getRequestid(), Source.DB, readedFromDBEvent.getProduct()));
+		
+		dbStream.to(ProductEvent.class.getName(),
+				Produced.with(stringSerde, kafkaSerdeConfig.productEventSerde()));
+
 		KStream<String, Flushed> lastStream = builder
-				.stream(kafkaTopicConfig.getProductTopicName(), Consumed.with(stringSerde, productEventSerde))
-				.filter((key, productEvent) -> environment.getRequestid().toString().equals(key))
+				.stream(ProductEvent.class.getName(), Consumed.with(stringSerde, productEventSerde))
 				.process(() -> new CustomProductPairAggregator(metrics, aggregateWindowInSec, flushSize,
 						productPairStoreName, environment), productPairStoreName)
 				.process(() -> new CustomDBWriter(environment, productService, txManager));
 
-		lastStream.to(kafkaTopicConfig.getFlushedName(), Produced.with(stringSerde, kafkaSerdeConfig.flushedSerde()));
+		lastStream.to(Flushed.class.getName(), Produced.with(stringSerde, kafkaSerdeConfig.flushedSerde()));
 
 		return lastStream;
 	}
