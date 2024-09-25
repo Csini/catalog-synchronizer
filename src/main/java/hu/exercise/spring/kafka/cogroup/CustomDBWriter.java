@@ -22,6 +22,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
+import hu.exercise.spring.kafka.topic.Flushed;
 
 public class CustomDBWriter implements Processor<String, ProductRollup, String, Flushed> {
 

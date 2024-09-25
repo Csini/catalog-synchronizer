@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.Report;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.topic.ReadedFromDBEvent;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
 import io.reactivex.rxjava3.core.Observable;
@@ -40,11 +41,6 @@ public class DBProductMessageProducer {
 
 				LOGGER.info("sending product to readedFromDb: " + p);
 				ReadedFromDBEvent event = new ReadedFromDBEvent(p.getId(), environment.getRequestid().toString(), p);
-//				sendEvent(event);
-
-//				CompletableFuture<SendResult<String, ProductEvent>> sendProductMessage = super.sendProductMessage(
-//						event);
-				
 				return event;
 			}).subscribe(readedFromDBEventObserver);
 			

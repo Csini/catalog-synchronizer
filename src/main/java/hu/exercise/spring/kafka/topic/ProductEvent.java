@@ -1,18 +1,23 @@
-package hu.exercise.spring.kafka.event;
+package hu.exercise.spring.kafka.topic;
 
+import hu.exercise.spring.kafka.cogroup.Source;
 import hu.exercise.spring.kafka.input.Product;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import net.csini.spring.kafka.KafkaEntity;
+import net.csini.spring.kafka.KafkaEntityKey;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = { "id", "requestid" })
+@KafkaEntity
 public class ProductEvent {
 	
+	@KafkaEntityKey
 	@Schema(description = "Your product’s unique identifier", example = "A2B4")
 	private String id;
 	

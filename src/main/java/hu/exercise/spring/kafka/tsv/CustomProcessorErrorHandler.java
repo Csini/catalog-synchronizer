@@ -14,7 +14,7 @@ import com.univocity.parsers.common.ProcessorErrorHandler;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.event.InvalidMessageProducer;
-import hu.exercise.spring.kafka.event.ProductErrorEvent;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
 
 @Service
 public class CustomProcessorErrorHandler implements ProcessorErrorHandler<Context> {

@@ -23,13 +23,13 @@ import com.codahale.metrics.MetricRegistry;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.cogroup.CustomDBWriter;
 import hu.exercise.spring.kafka.cogroup.CustomProductPairAggregator;
-import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.ReadedFromDBEvent;
-import hu.exercise.spring.kafka.event.Source;
-import hu.exercise.spring.kafka.event.ValidProductEvent;
+import hu.exercise.spring.kafka.cogroup.Source;
 import hu.exercise.spring.kafka.service.ProductService;
+import hu.exercise.spring.kafka.topic.Flushed;
+import hu.exercise.spring.kafka.topic.ProductEvent;
+import hu.exercise.spring.kafka.topic.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 import jakarta.annotation.PostConstruct;
 
 @EnableKafka

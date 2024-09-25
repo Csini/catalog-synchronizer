@@ -1,4 +1,4 @@
-package hu.exercise.spring.kafka.event;
+package hu.exercise.spring.kafka.topic;
 
 import hu.exercise.spring.kafka.input.Product;
 import io.swagger.v3.oas.annotations.media.Schema;

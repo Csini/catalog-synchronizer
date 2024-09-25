@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.KafkaUtils;
 import hu.exercise.spring.kafka.cogroup.Action;
-import hu.exercise.spring.kafka.event.DBEvent;
 import hu.exercise.spring.kafka.event.DBEventMessageProducer;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.repository.ProductRepository;

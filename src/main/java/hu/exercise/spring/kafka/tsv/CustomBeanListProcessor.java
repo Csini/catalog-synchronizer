@@ -15,10 +15,10 @@ import com.univocity.parsers.common.processor.BeanListProcessor;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.event.InvalidMessageProducer;
-import hu.exercise.spring.kafka.event.ProductErrorEvent;
 import hu.exercise.spring.kafka.event.ValidMessageProducer;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.input.ProductValidator;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import jakarta.validation.ConstraintViolation;

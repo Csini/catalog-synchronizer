@@ -29,8 +29,8 @@ channels:
   hu.exercise.spring.kafka.event.ProductErrorEvent:
     address: hu.exercise.spring.kafka.event.ProductErrorEvent
     messages:
-      hu.exercise.spring.kafka.event.ProductErrorEvent:
-        $ref: "#/components/messages/hu.exercise.spring.kafka.event.ProductErrorEvent"
+      hu.exercise.spring.kafka.topic.ProductErrorEvent:
+        $ref: "#/components/messages/hu.exercise.spring.kafka.topic.ProductErrorEvent"
   hu.exercise.spring.kafka.event.ReadedFromDBEvent:
     address: hu.exercise.spring.kafka.event.ReadedFromDBEvent
     messages:
@@ -62,51 +62,6 @@ components:
       description: No payload specified
       examples:
         - {}
-    hu.exercise.spring.kafka.event.ProductErrorEvent:
-      title: ProductErrorEvent
-      type: object
-      properties:
-        errorMessage:
-          type: string
-        id:
-          type: string
-          description: Your product’s unique identifier
-          examples:
-            - A2B4
-        product:
-          $ref: "#/components/schemas/hu.exercise.spring.kafka.input.Product"
-        requestid:
-          type: string
-          description: Run's unique identifier
-          format: uuid
-          examples:
-            - a3dbaa5a-1375-491e-8c21-403864de8779
-      examples:
-        - errorMessage: string
-          id: A2B4
-          product:
-            age_group: infant
-            availability: in_stock
-            brand: Google
-            condition: new
-            created: 2015-07-20T15:49:04-07:00
-            description: "Made from 100% organic cotton, this classic red men’s polo\
-              \ has a slim fit and signature logo embroidered on the left chest. Machine\
-              \ wash cold; imported."
-            google_product_category: "371"
-            id: A2B4
-            image_link: http:// www.example.com/image1.jpg
-            link: http://www.example.com/asp/sp.asp?cat=12&id=1030
-            price: 15.00 USD
-            run:
-              created: 2015-07-20T15:49:04-07:00
-              filename: file4.txt
-              requestid: a3dbaa5a-1375-491e-8c21-403864de8779
-              updated: 2015-07-20T15:49:04-07:00
-            sale_price: 15.00 USD
-            title: Mens Pique Polo Shirt
-            updated: 2015-07-20T15:49:04-07:00
-          requestid: a3dbaa5a-1375-491e-8c21-403864de8779
     hu.exercise.spring.kafka.input.MonetaryAmount:
       type: object
       properties:
@@ -271,6 +226,51 @@ components:
           filename: file4.txt
           requestid: a3dbaa5a-1375-491e-8c21-403864de8779
           updated: 2015-07-20T15:49:04-07:00
+    hu.exercise.spring.kafka.topic.ProductErrorEvent:
+      title: ProductErrorEvent
+      type: object
+      properties:
+        errorMessage:
+          type: string
+        id:
+          type: string
+          description: Your product’s unique identifier
+          examples:
+            - A2B4
+        product:
+          $ref: "#/components/schemas/hu.exercise.spring.kafka.input.Product"
+        requestid:
+          type: string
+          description: Run's unique identifier
+          format: uuid
+          examples:
+            - a3dbaa5a-1375-491e-8c21-403864de8779
+      examples:
+        - errorMessage: string
+          id: A2B4
+          product:
+            age_group: infant
+            availability: in_stock
+            brand: Google
+            condition: new
+            created: 2015-07-20T15:49:04-07:00
+            description: "Made from 100% organic cotton, this classic red men’s polo\
+              \ has a slim fit and signature logo embroidered on the left chest. Machine\
+              \ wash cold; imported."
+            google_product_category: "371"
+            id: A2B4
+            image_link: http:// www.example.com/image1.jpg
+            link: http://www.example.com/asp/sp.asp?cat=12&id=1030
+            price: 15.00 USD
+            run:
+              created: 2015-07-20T15:49:04-07:00
+              filename: file4.txt
+              requestid: a3dbaa5a-1375-491e-8c21-403864de8779
+              updated: 2015-07-20T15:49:04-07:00
+            sale_price: 15.00 USD
+            title: Mens Pique Polo Shirt
+            updated: 2015-07-20T15:49:04-07:00
+          requestid: a3dbaa5a-1375-491e-8c21-403864de8779
     io.reactivex.rxjava3.core.Observable:
       title: Observable
       type: object
@@ -293,16 +293,6 @@ components:
       title: PayloadNotUsed
       description: No payload specified
       bindings: {}
-    hu.exercise.spring.kafka.event.ProductErrorEvent:
-      headers:
-        $ref: "#/components/schemas/HeadersNotDocumented"
-      payload:
-        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
-        schema:
-          $ref: "#/components/schemas/hu.exercise.spring.kafka.event.ProductErrorEvent"
-      name: hu.exercise.spring.kafka.event.ProductErrorEvent
-      title: ProductErrorEvent
-      bindings: {}
     hu.exercise.spring.kafka.input.Run:
       headers:
         $ref: "#/components/schemas/HeadersNotDocumented"
@@ -312,6 +302,16 @@ components:
           $ref: "#/components/schemas/hu.exercise.spring.kafka.input.Run"
       name: hu.exercise.spring.kafka.input.Run
       title: Run
+      bindings: {}
+    hu.exercise.spring.kafka.topic.ProductErrorEvent:
+      headers:
+        $ref: "#/components/schemas/HeadersNotDocumented"
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          $ref: "#/components/schemas/hu.exercise.spring.kafka.topic.ProductErrorEvent"
+      name: hu.exercise.spring.kafka.topic.ProductErrorEvent
+      title: ProductErrorEvent
       bindings: {}
     io.reactivex.rxjava3.core.Observable:
       headers:
@@ -360,7 +360,7 @@ operations:
     description: All the invalid Products readed from the input TSV.
     bindings: {}
     messages:
-      - $ref: "#/channels/hu.exercise.spring.kafka.event.ProductErrorEvent/messages/hu.exercise.spring.kafka.event.ProductErrorEvent"
+      - $ref: "#/channels/hu.exercise.spring.kafka.event.ProductErrorEvent/messages/hu.exercise.spring.kafka.topic.ProductErrorEvent"
   hu.exercise.spring.kafka.event.ReadedFromDBEvent_send_sendMessages:
     action: send
     channel:

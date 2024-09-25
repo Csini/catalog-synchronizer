@@ -3,7 +3,6 @@ package hu.exercise.spring.kafka.cogroup;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -27,8 +26,7 @@ import com.codahale.metrics.Timer;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.KafkaUtils;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.Source;
+import hu.exercise.spring.kafka.topic.ProductEvent;
 
 public class CustomProductPairAggregator implements Processor<String, ProductEvent, String, ProductRollup> {
 

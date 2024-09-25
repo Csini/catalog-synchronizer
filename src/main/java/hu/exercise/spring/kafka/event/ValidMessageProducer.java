@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
 import io.reactivex.rxjava3.core.Observable;

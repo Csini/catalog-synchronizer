@@ -12,13 +12,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaAdmin;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
-import hu.exercise.spring.kafka.cogroup.Flushed;
-import hu.exercise.spring.kafka.event.DBEvent;
-import hu.exercise.spring.kafka.event.ProductErrorEvent;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.ReadedFromDBEvent;
-import hu.exercise.spring.kafka.event.ValidProductEvent;
 import hu.exercise.spring.kafka.input.Run;
+import hu.exercise.spring.kafka.topic.DBEvent;
+import hu.exercise.spring.kafka.topic.Flushed;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
+import hu.exercise.spring.kafka.topic.ProductEvent;
+import hu.exercise.spring.kafka.topic.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 
 @Configuration
 public class KafkaAdminConfig {

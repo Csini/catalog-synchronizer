@@ -43,16 +43,16 @@ import hu.exercise.spring.kafka.config.InputOutputConfig;
 import hu.exercise.spring.kafka.config.JAXBConfig;
 import hu.exercise.spring.kafka.config.KafkaSerdeConfig;
 import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
-import hu.exercise.spring.kafka.event.DBEvent;
-import hu.exercise.spring.kafka.event.ProductErrorEvent;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.ReadedFromDBEvent;
-import hu.exercise.spring.kafka.event.Source;
-import hu.exercise.spring.kafka.event.ValidProductEvent;
 import hu.exercise.spring.kafka.input.Availability;
 import hu.exercise.spring.kafka.input.MonetaryAmount;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.input.Run;
+import hu.exercise.spring.kafka.topic.DBEvent;
+import hu.exercise.spring.kafka.topic.Flushed;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
+import hu.exercise.spring.kafka.topic.ProductEvent;
+import hu.exercise.spring.kafka.topic.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 
 @TestPropertySource("/application.yml")
 @SpringBootTest(classes = { KafkaTestConfig.class, KafkaSerdeConfig.class, KafkaStreamsConfig.class,

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
 import io.reactivex.rxjava3.core.Observable;

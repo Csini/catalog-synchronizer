@@ -1,4 +1,4 @@
-package hu.exercise.spring.kafka.event;
+package hu.exercise.spring.kafka.topic;
 
 import java.util.UUID;
 

@@ -7,13 +7,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import hu.exercise.spring.kafka.cogroup.Flushed;
 import hu.exercise.spring.kafka.cogroup.ProductPair;
 import hu.exercise.spring.kafka.cogroup.ProductRollup;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.ReadedFromDBEvent;
-import hu.exercise.spring.kafka.event.ValidProductEvent;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.topic.Flushed;
+import hu.exercise.spring.kafka.topic.ProductEvent;
+import hu.exercise.spring.kafka.topic.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 
 @Configuration
 public class KafkaSerdeConfig {
