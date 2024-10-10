@@ -1,32 +1,32 @@
 package hu.exercise.spring.kafka.event;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
-import hu.exercise.spring.kafka.config.KafkaTopicConfig;
+import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import net.csini.spring.kafka.KafkaEntityObserver;
 
 @Service
-public class ValidMessageProducer extends ProductEventMessageProducer {
+public class ValidMessageProducer {
 
-	@Autowired
-	public KafkaTopicConfig kafkaTopicConfig;
-
-	@Autowired
-	private KafkaTemplate<String, ProductEvent> validFromTSVKafkaTemplate;
+	@KafkaEntityObserver(entity = ValidProductEvent.class)
+	private Observer<ValidProductEvent> validProductEventObserver;
 
 	@Autowired
 	public KafkaEnvironment environment;
 
-	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.validProductName}", description = "All the valid Products readed by the request from the input TSV."))
-	public void sendEvent(ProductEvent productEvent) {
-		environment.getReport().setCountReadedFromTsvValid(environment.getReport().getCountReadedFromTsvValid() + 1);
+	@AsyncPublisher(operation = @AsyncOperation(channelName = "hu.exercise.spring.kafka.event.ValidProductEvent}", description = "All the valid Products readed by the request from the input TSV."))
+	public void sendEvent(Observable<Product> published) {
+		
+		published.map(bean -> new ValidProductEvent(bean.getId(), environment.getRequestid().toString(), bean))
+				.subscribe(validProductEventObserver);
+		
 
-		validFromTSVKafkaTemplate.send(kafkaTopicConfig.getValidProductName(),
-				"" + productEvent.getRequestid() + "." + productEvent.getId(), productEvent);
-		super.sendProductMessage(productEvent);
 	}
 }

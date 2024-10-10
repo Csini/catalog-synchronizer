@@ -1,32 +1,33 @@
 package hu.exercise.spring.kafka.event;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
-import hu.exercise.spring.kafka.config.KafkaTopicConfig;
+import hu.exercise.spring.kafka.cogroup.Action;
+import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.topic.DBEvent;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import net.csini.spring.kafka.KafkaEntityObserver;
 
 @Service
 public class DBEventMessageProducer {
 
-	@Autowired
-	public KafkaTopicConfig kafkaTopicConfig;
-
-	@Autowired
-	private KafkaTemplate<String, DBEvent> dbEventTopicKafkaTemplate;
+	@KafkaEntityObserver(entity = DBEvent.class)
+	private Observer<DBEvent> dbEventObserver;
 
 	@Autowired
 	public KafkaEnvironment environment;
+	
+	@AsyncPublisher(operation = @AsyncOperation(channelName = "hu.exercise.spring.kafka.event.DBEvent", description = "All the DB Actions done by the request."))
+	public void sendAll(@Payload Iterable<Product> saveAll, Action action) {
 
-	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.dbEventTopicName}", description = "All the DB Actions done by the request."))
-	public CompletableFuture<SendResult<String, DBEvent>> sendMessage(DBEvent event) {
-		return dbEventTopicKafkaTemplate.send(kafkaTopicConfig.getDbEventTopicName(),
-				event.getRequestid().toString() /* + "." + event.getId() */, event);
+		Observable.fromIterable(saveAll).map(p -> new DBEvent(environment.getRequestid().toString(), p.getId(), action))
+				.subscribe(dbEventObserver);
+
 	}
 }

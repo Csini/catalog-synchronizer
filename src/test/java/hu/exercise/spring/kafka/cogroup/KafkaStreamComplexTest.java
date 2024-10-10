@@ -43,17 +43,21 @@ import hu.exercise.spring.kafka.config.InputOutputConfig;
 import hu.exercise.spring.kafka.config.JAXBConfig;
 import hu.exercise.spring.kafka.config.KafkaSerdeConfig;
 import hu.exercise.spring.kafka.config.KafkaStreamsConfig;
-import hu.exercise.spring.kafka.config.KafkaTopicConfig;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.Source;
 import hu.exercise.spring.kafka.input.Availability;
 import hu.exercise.spring.kafka.input.MonetaryAmount;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.input.Run;
+import hu.exercise.spring.kafka.topic.DBEvent;
+import hu.exercise.spring.kafka.topic.Flushed;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
+import hu.exercise.spring.kafka.topic.ProductEvent;
+import hu.exercise.spring.kafka.topic.ReadedFromDBEvent;
+import hu.exercise.spring.kafka.topic.ValidProductEvent;
 
 @TestPropertySource("/application.yml")
 @SpringBootTest(classes = { KafkaTestConfig.class, KafkaSerdeConfig.class, KafkaStreamsConfig.class,
-		KafkaTopicConfig.class, KafkaEnvironment.class, JAXBConfig.class, ProductServiceSpy.class,
-		PlatformTransactionManagerSpy.class, AppContextRefreshedEventPropertiesPrinter.class, InputOutputConfig.class })
+		KafkaEnvironment.class, JAXBConfig.class, ProductServiceSpy.class, PlatformTransactionManagerSpy.class,
+		AppContextRefreshedEventPropertiesPrinter.class, InputOutputConfig.class })
 @EmbeddedKafka(partitions = 1, bootstrapServersProperty = "spring.kafka.bootstrap-servers", brokerProperties = {
 		"log.dir=target/kafka-log", "auto.create.topics.enable=${kafka.broker.topics-enable:true}" })
 public class KafkaStreamComplexTest {
@@ -70,9 +74,6 @@ public class KafkaStreamComplexTest {
 	KafkaStreamsConfig streamsConfig;
 
 	@Autowired
-	KafkaTopicConfig kafkaTopicConfig;
-
-	@Autowired
 	KafkaSerdeConfig kafkaSerdeConfig;
 
 	@Autowired
@@ -80,7 +81,7 @@ public class KafkaStreamComplexTest {
 
 	@Autowired
 	ProductServiceSpy productServiceSpy;
-	
+
 	@Autowired
 	PlatformTransactionManagerSpy platformTransactionManagerSpy;
 
@@ -90,10 +91,18 @@ public class KafkaStreamComplexTest {
 	public void beforeEach() {
 		LOGGER.warn("beforeEach");
 
-		this.embeddedKafka.addTopics(kafkaTopicConfig.readedFromDb(), kafkaTopicConfig.validProduct(),
-				kafkaTopicConfig.invalidProduct(), kafkaTopicConfig.flushed(), kafkaTopicConfig.productTopic(),
-				kafkaTopicConfig.dbEventTopic(), kafkaTopicConfig.runs());
-
+		this.embeddedKafka.addTopics(
+				
+				ReadedFromDBEvent.class.getName(), 
+				ValidProductEvent.class.getName(), 
+				ProductErrorEvent.class.getName(), 
+				Flushed.class.getName(), 
+				ProductEvent.class.getName(), 
+				DBEvent.class.getName(), 
+				Run.class.getName()
+				
+				);
+				
 		productServiceSpy.reset();
 		platformTransactionManagerSpy.reset();
 
@@ -128,7 +137,7 @@ public class KafkaStreamComplexTest {
 
 		initAndStartStream();
 
-		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
+		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, Flushed.class.getName());
 
 		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
 		AtomicInteger countInsert = new AtomicInteger();
@@ -178,7 +187,7 @@ public class KafkaStreamComplexTest {
 		initAndStartStream();
 
 		Consumer<String, Flushed> flushConsumer = flushConsumer();
-		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
+		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, Flushed.class.getName());
 
 		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
 		AtomicInteger countInsert = new AtomicInteger();
@@ -229,7 +238,7 @@ public class KafkaStreamComplexTest {
 		initAndStartStream();
 
 		Consumer<String, Flushed> flushConsumer = flushConsumer();
-		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
+		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, Flushed.class.getName());
 
 		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
 		AtomicInteger countInsert = new AtomicInteger();
@@ -281,7 +290,7 @@ public class KafkaStreamComplexTest {
 		initAndStartStream();
 
 		Consumer<String, Flushed> flushConsumer = flushConsumer();
-		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, kafkaTopicConfig.getFlushedName());
+		this.embeddedKafka.consumeFromAnEmbeddedTopic(flushConsumer, Flushed.class.getName());
 
 		ConsumerRecords<String, Flushed> flushRecords = KafkaTestUtils.getRecords(flushConsumer);
 		AtomicInteger countInsert = new AtomicInteger();
@@ -322,7 +331,7 @@ public class KafkaStreamComplexTest {
 	private void sendProductEvent(ProductEvent productEvent) throws InterruptedException, ExecutionException {
 		LOGGER.warn("sending " + productEvent);
 		this.kafkaTemplate()
-				.send(kafkaTopicConfig.getProductTopicName(), environment.getRequestid().toString(), productEvent)
+				.send(ProductEvent.class.getName(), environment.getRequestid().toString(), productEvent)
 				.get();
 	}
 
@@ -345,7 +354,7 @@ public class KafkaStreamComplexTest {
 		ProductEvent productEvent = new ProductEvent();
 		productEvent.setSource(source);
 		productEvent.setId(id);
-		productEvent.setRequestid(environment.getRequestid());
+		productEvent.setRequestid(environment.getRequestid().toString());
 
 		Product product = new Product();
 		product.setId(id);

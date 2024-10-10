@@ -3,7 +3,6 @@ package hu.exercise.spring.kafka.cogroup;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -27,8 +26,7 @@ import com.codahale.metrics.Timer;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.KafkaUtils;
-import hu.exercise.spring.kafka.event.ProductEvent;
-import hu.exercise.spring.kafka.event.Source;
+import hu.exercise.spring.kafka.topic.ProductEvent;
 
 public class CustomProductPairAggregator implements Processor<String, ProductEvent, String, ProductRollup> {
 
@@ -89,8 +87,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 	@Override
 	public void process(Record<String, ProductEvent> rec) {
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("processing: " + rec.value());
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("processing: " + rec.value());
 		}
 
 		processCounter++;
@@ -101,8 +99,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 //		LOGGER.warn("found(" + id + "): " + oldValue);
 
 		if (oldValue == null) {
-			if (LOGGER.isDebugEnabled()) {
-				LOGGER.debug("NEW!!!!");
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("NEW!!!!");
 			}
 			oldValue = new ProductPair(id, rec.value().getRequestid().toString());
 			eventCounter++;
@@ -110,8 +108,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 			foundCounter++;
 		}
 
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("oldValue: " + oldValue);
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("oldValue: " + oldValue);
 		}
 
 		ProductEvent productEvent = rec.value();
@@ -128,11 +126,14 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 
 		long toBeProcessed = environment.getReport().getSumToBeProcessed();
 
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
 		}
 
 		if (processCounter >= toBeProcessed) {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("end - processCounter: " + processCounter + " , toBeProcessed: " + toBeProcessed);
+			}
 			environment.getReport().setSumEvent(eventCounter);
 			if (flushSize <= 0) {
 				flushStore();
@@ -155,8 +156,8 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 			while (it.hasNext()) {
 				KeyValue<String, ProductPair> next = it.next();
 				counter.incrementAndGet();
-				if (LOGGER.isDebugEnabled()) {
-					LOGGER.debug("next: " + next);
+				if (LOGGER.isTraceEnabled()) {
+					LOGGER.trace("next: " + next);
 				}
 				toBeForwarded.getPairList().add(next.value);
 				store.delete(next.key);
@@ -171,18 +172,17 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 	}
 
 	private void flushStoreBatched() {
-		LOGGER.info("flushStoreBatched");
+		LOGGER.info("flushStoreBatched: " + processCounter);
 		;
 		try (final KeyValueIterator<String, ProductPair> it = store.all()) {
 
 			Stream<KeyValue<String, ProductPair>> stream = KafkaUtils.getStreamFromIterator(it);
-//			Optional<List<KeyValue<String, ProductPair>>> lastElement = 
 					partitionStream(stream, flushSize).stream()
 					.forEach(nextList -> {
 						ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(),
 								flushCounter);
-						if (LOGGER.isDebugEnabled()) {
-							LOGGER.debug("nextList: " + nextList);
+						if (LOGGER.isTraceEnabled()) {
+							LOGGER.trace("nextList: " + nextList);
 						}
 						nextList.stream().forEach(next -> {
 							toBeForwarded.getPairList().add(next.value);
@@ -194,15 +194,7 @@ public class CustomProductPairAggregator implements Processor<String, ProductEve
 						context.forward(new Record<String, ProductRollup>(
 								environment.getRequestid() + "-" + flushCounter, toBeForwarded, new Date().getTime()));
 						flushCounter++;
-//						return nextList;
 					});
-//					.reduce((first, second) -> second);
-//			lastElement.ifPresent(value -> {
-//				ProductRollup toBeForwarded = new ProductRollup(environment.getRequestid().toString(), flushCounter,
-//						flushCounter);
-//				context.forward(new Record<String, ProductRollup>(environment.getRequestid() + "-" + flushCounter,
-//						toBeForwarded, new Date().getTime()));
-//			});
 
 		}
 	}

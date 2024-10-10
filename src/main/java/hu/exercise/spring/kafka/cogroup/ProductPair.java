@@ -2,8 +2,8 @@ package hu.exercise.spring.kafka.cogroup;
 
 import org.springframework.util.Assert;
 
-import hu.exercise.spring.kafka.event.ProductEvent;
 import hu.exercise.spring.kafka.input.Product;
+import hu.exercise.spring.kafka.topic.ProductEvent;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

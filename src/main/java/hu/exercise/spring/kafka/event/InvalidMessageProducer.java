@@ -1,31 +1,30 @@
 package hu.exercise.spring.kafka.event;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import hu.exercise.spring.kafka.KafkaEnvironment;
-import hu.exercise.spring.kafka.config.KafkaTopicConfig;
+import hu.exercise.spring.kafka.topic.ProductErrorEvent;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import net.csini.spring.kafka.KafkaEntityObserver;
 
 @Service
 public class InvalidMessageProducer {
-	@Autowired
-	public KafkaTopicConfig kafkaTopicConfig;
 
-	@Autowired
-	private KafkaTemplate<String, ProductErrorEvent> invalidFromTSVKafkaTemplate;
-
+	@KafkaEntityObserver(entity = ProductErrorEvent.class)
+	private Observer<ProductErrorEvent> productErrorEventObserver;
+	
 	@Autowired
 	public KafkaEnvironment environment;
 
-	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.invalidProductName}", description = "All the invalid Products readed from the input TSV."))
+	@AsyncPublisher(operation = @AsyncOperation(channelName = "hu.exercise.spring.kafka.event.ProductErrorEvent", description = "All the invalid Products readed from the input TSV."))
 	public void sendEvent(ProductErrorEvent productErrorEvent) {
 
 		environment.getReport().setCountReadedFromTsvInvalid(environment.getReport().getCountReadedFromTsvInvalid()+1);
 		
-		invalidFromTSVKafkaTemplate.send(kafkaTopicConfig.getInvalidProductName(), "" + productErrorEvent.getRequestid(),
-				productErrorEvent);
+		Observable.just(productErrorEvent).subscribe(productErrorEventObserver);
 	}
 }

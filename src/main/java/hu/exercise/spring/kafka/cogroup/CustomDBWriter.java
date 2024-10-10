@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
@@ -20,6 +22,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import hu.exercise.spring.kafka.KafkaEnvironment;
 import hu.exercise.spring.kafka.input.Product;
 import hu.exercise.spring.kafka.service.ProductService;
+import hu.exercise.spring.kafka.topic.Flushed;
 
 public class CustomDBWriter implements Processor<String, ProductRollup, String, Flushed> {
 
@@ -64,7 +67,7 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 	@Override
 	public void process(Record<String, ProductRollup> rec) {
 		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("processing: " + rec.value());
+			LOGGER.debug("processing: " + rec.value().getFlushid());
 		}
 
 		flushCounter++;
@@ -107,8 +110,13 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 			this.txManager.commit(this.status);
 		}
 
-		context.forward(
-				new Record<String, Flushed>(environment.getRequestid().toString(), flushed, new Date().getTime()));
+		RecordHeaders headers = new RecordHeaders();
+		RecordHeader keyHeader = new RecordHeader("__Key_TypeId__", "java.lang.String".getBytes());
+		headers.add(keyHeader);
+		RecordHeader valueHeader = new RecordHeader("__TypeId__", "hu.exercise.spring.kafka.cogroup.Flushed".getBytes());
+		headers.add(valueHeader);
+		context.forward(new Record<String, Flushed>("\"" + environment.getRequestid().toString() + "\"", flushed,
+				new Date().getTime(), headers));
 	}
 
 	private Map<Action, List<Product>> group(Record<String, ProductRollup> rec, AtomicInteger counter) {
@@ -127,8 +135,8 @@ public class CustomDBWriter implements Processor<String, ProductRollup, String, 
 					Product readedFromDb = readedFromDbMap.get(productToSave.getId());
 
 					if (readedFromDb != null) {
-						if (LOGGER.isDebugEnabled()) {
-							LOGGER.debug("merging: " + pair.getAction() + " " + pair.getId());
+						if (LOGGER.isTraceEnabled()) {
+							LOGGER.trace("merging: " + pair.getAction() + " " + pair.getId());
 						}
 						readedFromDbMap.remove(productToSave.getId());
 						readedFromDb.merge(productToSave);

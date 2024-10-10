@@ -8,7 +8,7 @@
 	<name>catalog-synchronizer</name>
 	<description>catalog-synchronizer with Kafka and Spring</description>
 
-	<version>1.0.0</version>
+	<version>2.0.0-SNAPSHOT</version>
 
 	<properties>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
@@ -16,10 +16,10 @@
 		<maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
 		<maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
 		<maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-		<spring-boot.version>3.1.5</spring-boot.version>
+		<spring-boot.version>3.3.2</spring-boot.version>
 		<junit-jupiter.version>5.9.1</junit-jupiter.version>
 		<native-build-tools-plugin.version>0.9.17</native-build-tools-plugin.version>
-		<logback.version>1.4.4</logback.version>
+		<logback.version>1.5.6</logback.version>
 		<slf4j.version>2.0.3</slf4j.version>
 
 		<univocity.version>2.9.1</univocity.version>
@@ -33,7 +33,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>17</java.version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -193,6 +192,7 @@
 		<dependency>
 			<groupId>io.dropwizard.metrics</groupId>
 			<artifactId>metrics-core</artifactId>
+			<version>4.2.27</version>
 		</dependency>
 
 		<dependency>
@@ -204,7 +204,7 @@
 		<dependency>
 			<groupId>io.github.springwolf</groupId>
 			<artifactId>springwolf-kafka</artifactId>
-			<version>1.2.0</version>
+			<version>1.6.0</version>
 		</dependency>
 
 		<dependency>
@@ -219,9 +219,30 @@
 			<version>2.15.1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>net.csini.spring.kafka</groupId>
+			<artifactId>spring-kafka-extensions</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>application.properties</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>application.properties</exclude>
+				</excludes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -350,6 +371,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>${maven-resources-plugin.version}</version>
+				<configuration>
+					<encoding>${project.build.sourceEncoding}</encoding>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.graalvm.buildtools</groupId>

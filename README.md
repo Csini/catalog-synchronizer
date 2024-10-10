@@ -14,13 +14,6 @@ application.properties
 
 ```
 spring.kafka.bootstrap-servers=localhost:9092
-topic.name.readedFromDb=readedFromDb
-topic.name.validProduct=validProduct
-topic.name.invalidProduct=invalidProduct
-topic.name.flushed=flushed
-topic.name.product=productEvents
-topic.name.dbevent=dbEvents
-topic.name.runs=runs
 
 flushSize=1000
 

@@ -1,25 +1,22 @@
 package hu.exercise.spring.kafka.event;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import hu.exercise.spring.kafka.config.KafkaTopicConfig;
 import hu.exercise.spring.kafka.input.Run;
 import io.github.springwolf.core.asyncapi.annotations.AsyncOperation;
 import io.github.springwolf.core.asyncapi.annotations.AsyncPublisher;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import net.csini.spring.kafka.KafkaEntityObserver;
 
 @Service
 public class RunMessageProducer {
 
-	@Autowired
-	private KafkaTemplate<String, Run> runKafkaTemplate;
+	@KafkaEntityObserver(entity = Run.class)
+	private Observer<Run> runObserver;
 	
-	@Autowired
-	public KafkaTopicConfig kafkaTopicConfig;
-	
-	@AsyncPublisher(operation = @AsyncOperation(channelName = "#{kafkaTopicConfig.runsTopicName}", description = "All the Runs started from catalog-syncronizer."))
+	@AsyncPublisher(operation = @AsyncOperation(channelName = "hu.exercise.spring.kafka.event.Run", description = "All the Runs started from catalog-syncronizer."))
 	public void sendRunMessage(Run run) {
-		runKafkaTemplate.send(kafkaTopicConfig.getRunsTopicName(), run);
+		Observable.just(run).subscribe(runObserver);
 	}
 }

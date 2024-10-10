@@ -19,7 +19,6 @@ import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 
 import hu.exercise.spring.kafka.config.KafkaSerdeConfig;
-import hu.exercise.spring.kafka.config.KafkaTopicConfig;
 
 @Configuration
 @EnableKafkaStreams
@@ -33,9 +32,6 @@ public class KafkaTestConfig {
 
 	@Autowired
 	KafkaSerdeConfig kafkaSerdeConfig;
-
-	@Autowired
-	KafkaTopicConfig kafkaTopicConfig;
 
 	@Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
 	public KafkaStreamsConfiguration kStreamsConfigs() {

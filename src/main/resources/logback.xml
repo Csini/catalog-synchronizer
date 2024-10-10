@@ -16,6 +16,9 @@
     
      <logger name="org.hibernate" level="info" />
      
+     <logger name="net.csini" level="warn" />
+     <logger name="net.csini.spring.kafka.config" level="info" />
+     
      <logger name="org" level="warn" />
      
      <logger name="org.apache.kafka" level="warn" />
