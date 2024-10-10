@@ -3,7 +3,6 @@ package hu.exercise.spring.kafka;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,7 @@ public class KafkaEntityEnvironment implements DisposableBean {
 	private Disposable subscribed;
 
 	@Bean
-	public KafkaEntityConfig kafkaEntityConfig() throws KafkaEntityException, InterruptedException, ExecutionException {
+	public KafkaEntityConfig kafkaEntityConfig() throws KafkaEntityException {
 
 		KafkaEntityConfig kafkaEntityConfig = new KafkaEntityConfig(applicationContext, bootstrapServers);
 		kafkaEntityConfig.afterPropertiesSet();
